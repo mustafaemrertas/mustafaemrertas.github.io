@@ -1,6 +1,12 @@
-RewriteEngine On
-RewriteRule ^(.+[^/])$ $1.html
-RewriteCond %{SERVER_PORT} ^443$ [OR]
-RewriteCond %{HTTPS} =on
-RewriteRule ^(.*)$ https://mustafaemrertas.github.io/$1 [R=200,L]
+<IfModule mod_rewrite.c>
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.*)$ $1.php
+#RewriteRule ^([a-z]+)\/?$ $1.php [NC]
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.*)$ $1.html #RewriteRule ^([a-z]+)\/?$ $1.html [NC]
+</IfModule>
 ErrorDocument 404 https://mustafaemrertas.github.io/404.html
