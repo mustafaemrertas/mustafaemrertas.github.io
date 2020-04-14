@@ -7,6 +7,7 @@ RewriteRule ^(.*)$ $1.php
 
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}.html -f
-RewriteRule ^(.*)$ $1.html #RewriteRule ^([a-z]+)\/?$ $1.html [NC]
+RewriteRule ^(.*)$ $1.html 
+#RewriteRule ^([a-z]+)\/?$ $1.html [NC]
 </IfModule>
 ErrorDocument 404 https://mustafaemrertas.github.io/404.html
