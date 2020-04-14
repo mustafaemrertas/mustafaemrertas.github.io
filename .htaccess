@@ -1,8 +1,8 @@
 Options +FollowSymlinks
 RewriteEngine On
-RewriteRule ^index.*$ index.html [NC]
-RewriteRule ^404.*$  404.html [NC]
-RewriteRule ^about.*$  about.html [NC]
-RewriteRule ^contact.*$  contact.html [NC]
-RewriteRule ^donate.*$  donate.html [NC]
+RewriteRule ^index*$ index.html [NC]
+RewriteRule ^404*$  404.html [NC]
+RewriteRule ^about*$  about.html [NC]
+RewriteRule ^contact*$  contact.html [NC]
+RewriteRule ^donate*$  donate.html [NC]
 ErrorDocument 404 https://mustafaemrertas.github.io/404.html
