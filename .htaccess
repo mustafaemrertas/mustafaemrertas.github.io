@@ -1,6 +1,6 @@
 Options +FollowSymlinks
 RewriteEngine On
-RewriteRule ^index*$ index.html [NC]
+RewriteRule ^home*$ index.html [NC]
 RewriteRule ^404*$  404.html [NC]
 RewriteRule ^about*$  about.html [NC]
 RewriteRule ^contact*$  contact.html [NC]
