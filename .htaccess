@@ -6,5 +6,6 @@ RewriteRule ^about*$  about.html [NC]
 RewriteRule ^contact*$  contact.html [NC]
 RewriteRule ^donate*$  donate.html [NC]
 RewriteRule ^news*$  news.html [NC]
+RewriteRule ^games*$  games.html [NC]
 RewriteRule ^projects*$  projects.html [NC]
 ErrorDocument 404 https://mustafaemrertas.github.io/404.html
