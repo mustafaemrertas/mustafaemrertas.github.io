@@ -2,7 +2,6 @@ Options +FollowSymlinks
 RewriteEngine On
 RewriteRule ^home*$ index.html [NC]
 RewriteRule ^404*$  404.html [NC]
-RewriteRule ^about*$  about.html [NC]
 RewriteRule ^contact*$  contact.html [NC]
 RewriteRule ^donate*$  donate.html [NC]
 RewriteRule ^news*$  news.html [NC]
