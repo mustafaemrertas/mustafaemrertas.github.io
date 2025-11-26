@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="msapplication-TileColor" content="#1a1a2e">
+    
+    <!-- TV & Large Display Support -->
+    <meta name="tv-app-capable" content="yes">
+    
+    <title>Anadolu Gezi Rotası | İmmersive Deneyim</title>
+    
+    <!-- Preconnect for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Responsive units */
+            --base-size: clamp(14px, 2vw, 18px);
+            --heading-size: clamp(1.8rem, 5vw, 3.5rem);
+            --subheading-size: clamp(1.2rem, 3vw, 2rem);
+            --card-padding: clamp(15px, 3vw, 30px);
+            --gap: clamp(10px, 2vw, 20px);
+            
+            /* Safe areas for notched devices */
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+            
+            /* Colors */
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --accent-gold: #ffd700;
+            --accent-orange: #ff8c00;
+            --accent-red: #ff6347;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            font-size: var(--base-size);
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+            min-height: 100vh;
+            min-height: 100dvh; /* Dynamic viewport height for mobile */
+            color: #fff;
+            overflow-x: hidden;
+            padding-top: var(--safe-top);
+            padding-bottom: var(--safe-bottom);
+            padding-left: var(--safe-left);
+            padding-right: var(--safe-right);
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            background: linear-gradient(135deg, var(--bg-primary), var(--bg-tertiary));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-logo {
+            font-size: clamp(4rem, 15vw, 8rem);
+            animation: bounce 1s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .loading-text {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.2rem, 4vw, 2rem);
+            color: var(--accent-gold);
+            margin-top: 20px;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        .loading-bar {
+            width: clamp(200px, 60vw, 400px);
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            margin-top: 30px;
+            overflow: hidden;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-orange));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Audio Control Button */
+        .audio-control {
+            position: fixed;
+            top: calc(var(--safe-top) + 20px);
+            right: calc(var(--safe-right) + 20px);
+            width: clamp(44px, 8vw, 60px);
+            height: clamp(44px, 8vw, 60px);
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .audio-control:hover, .audio-control:focus {
+            background: rgba(255,215,0,0.2);
+            transform: scale(1.1);
+        }
+
+        .audio-control.muted {
+            opacity: 0.5;
+        }
+
+        /* Slideshow Background */
+        .slideshow-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            filter: brightness(0.3) blur(2px);
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .slide-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(26,26,46,0.85), rgba(15,52,96,0.85));
+        }
+
+        /* Location indicator */
+        .location-indicator {
+            position: fixed;
+            bottom: calc(var(--safe-bottom) + 100px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            padding: clamp(10px, 2vw, 15px) clamp(20px, 4vw, 40px);
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 100;
+            opacity: 0;
+            transition: all 0.5s ease;
+            border: 1px solid rgba(255,215,0,0.3);
+        }
+
+        .location-indicator.show {
+            opacity: 1;
+        }
+
+        .location-indicator .icon {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            animation: locationPulse 2s ease infinite;
+        }
+
+        @keyframes locationPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .location-indicator .text {
+            font-size: clamp(0.85rem, 2vw, 1rem);
+            color: var(--accent-gold);
+            font-weight: 500;
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: clamp(2px, 0.5vw, 4px);
+            height: clamp(2px, 0.5vw, 4px);
+            background: rgba(255, 215, 0, 0.6);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            position: fixed;
+            top: var(--safe-top);
+            left: 0;
+            height: clamp(3px, 0.5vw, 5px);
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-orange), var(--accent-red));
+            width: 0;
+            z-index: 1000;
+            transition: width 0.3s ease;
+        }
+
+        /* Replay Button */
+        .replay-btn {
+            position: fixed;
+            bottom: calc(var(--safe-bottom) + 30px);
+            right: calc(var(--safe-right) + 30px);
+            width: clamp(50px, 10vw, 70px);
+            height: clamp(50px, 10vw, 70px);
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.3rem, 4vw, 1.8rem);
+            box-shadow: 0 4px 30px rgba(255, 215, 0, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .replay-btn:hover, .replay-btn:focus {
+            transform: scale(1.1);
+            box-shadow: 0 6px 40px rgba(255, 215, 0, 0.6);
+        }
+
+        /* Car animation */
+        .car-animation {
+            position: fixed;
+            bottom: calc(var(--safe-bottom) + 120px);
+            left: -150px;
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            z-index: 100;
+            opacity: 0;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
+        }
+
+        .car-animation.animate {
+            animation: carDrive 5s ease-in-out forwards;
+        }
+
+        @keyframes carDrive {
+            0% { left: -150px; opacity: 0; transform: translateY(0) rotate(0deg); }
+            10% { opacity: 1; }
+            20% { transform: translateY(-8px) rotate(-2deg); }
+            40% { transform: translateY(8px) rotate(2deg); }
+            60% { transform: translateY(-5px) rotate(-1deg); }
+            80% { transform: translateY(5px) rotate(1deg); }
+            90% { opacity: 1; }
+            100% { left: calc(100% + 150px); opacity: 0; transform: translateY(0) rotate(0deg); }
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: clamp(40px, 8vh, 80px) clamp(15px, 4vw, 30px) clamp(30px, 5vh, 50px);
+            position: relative;
+            z-index: 1;
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+
+        .header.animate {
+            animation: dropIn 1s ease forwards;
+        }
+
+        @keyframes dropIn {
+            0% { opacity: 0; transform: translateY(-50px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: var(--heading-size);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange), var(--accent-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: clamp(10px, 2vw, 20px);
+            line-height: 1.2;
+        }
+
+        .header.animate h1 {
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.3)); }
+            50% { filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.6)); }
+        }
+
+        .header .subtitle {
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 300;
+            letter-spacing: clamp(2px, 0.5vw, 4px);
+            opacity: 0;
+        }
+
+        .header.animate .subtitle {
+            animation: fadeIn 1s ease 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* Route line */
+        .route-line {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(8px, 2vw, 20px);
+            margin-top: clamp(20px, 4vh, 40px);
+            flex-wrap: wrap;
+            padding: 0 clamp(10px, 3vw, 30px);
+        }
+
+        .route-city {
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        .route-city.animate {
+            animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .route-city span {
+            font-size: clamp(0.7rem, 2vw, 1rem);
+            font-weight: 500;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: clamp(1px, 0.3vw, 2px);
+        }
+
+        .route-arrow {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            opacity: 0;
+        }
+
+        .route-arrow.animate {
+            animation: arrowSlide 0.3s ease forwards;
+        }
+
+        @keyframes arrowSlide {
+            0% { opacity: 0; transform: translateX(-20px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Main container */
+        .container {
+            max-width: min(1200px, 95vw);
+            margin: 0 auto;
+            padding: clamp(20px, 4vw, 50px) clamp(10px, 3vw, 25px);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: clamp(40px, 8vw, 60px);
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: clamp(15px, 3vw, 25px);
+            top: 0;
+            height: 0;
+            width: clamp(2px, 0.4vw, 4px);
+            background: linear-gradient(to bottom, var(--accent-gold), var(--accent-orange), var(--accent-red), #e94560, var(--accent-gold));
+            border-radius: 3px;
+            transition: height 4s ease;
+        }
+
+        .timeline.animate::before {
+            height: 100%;
+        }
+
+        /* Stop card */
+        .stop {
+            position: relative;
+            margin-bottom: clamp(40px, 8vh, 80px);
+            opacity: 0;
+            transform: translateX(-50px);
+        }
+
+        .stop.animate {
+            animation: slideInLeft 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes slideInLeft {
+            0% { opacity: 0; transform: translateX(-50px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        .stop-marker {
+            position: absolute;
+            left: clamp(-35px, -6vw, -45px);
+            top: clamp(15px, 3vw, 25px);
+            width: clamp(36px, 7vw, 50px);
+            height: clamp(36px, 7vw, 50px);
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            color: var(--bg-primary);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            z-index: 2;
+            transform: scale(0);
+        }
+
+        .stop.animate .stop-marker {
+            animation: markerPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.3s forwards;
+        }
+
+        @keyframes markerPop {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .stop.animate .stop-marker::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(255, 215, 0, 0.3);
+            animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes ping {
+            75%, 100% { transform: scale(2); opacity: 0; }
+        }
+
+        .stop-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: clamp(16px, 3vw, 28px);
+            padding: var(--card-padding);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s ease;
+        }
+
+        .stop-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        /* Slideshow in card */
+        .card-slideshow {
+            width: 100%;
+            height: clamp(150px, 25vw, 250px);
+            border-radius: clamp(12px, 2vw, 20px);
+            overflow: hidden;
+            margin-bottom: clamp(15px, 3vw, 25px);
+            position: relative;
+        }
+
+        .card-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .card-slide.active {
+            opacity: 1;
+        }
+
+        .card-slide-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: clamp(10px, 2vw, 20px);
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        }
+
+        .card-slide-text {
+            color: white;
+            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stop-header {
+            display: flex;
+            align-items: center;
+            gap: clamp(12px, 3vw, 25px);
+            margin-bottom: clamp(15px, 3vw, 30px);
+        }
+
+        .stop-icon {
+            width: clamp(45px, 10vw, 70px);
+            height: clamp(45px, 10vw, 70px);
+            border-radius: clamp(12px, 2vw, 18px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            transform: rotate(-10deg) scale(0);
+            flex-shrink: 0;
+        }
+
+        .stop.animate .stop-icon {
+            animation: iconSpin 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.5s forwards;
+        }
+
+        @keyframes iconSpin {
+            0% { transform: rotate(-180deg) scale(0); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+
+        .stop:nth-child(1) .stop-icon { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
+        .stop:nth-child(2) .stop-icon { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .stop:nth-child(3) .stop-icon { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .stop:nth-child(4) .stop-icon { background: linear-gradient(135deg, #fa709a, #fee140); }
+
+        .stop-title {
+            font-family: 'Playfair Display', serif;
+            font-size: var(--subheading-size);
+            font-weight: 600;
+            color: #fff;
+            opacity: 0;
+            line-height: 1.2;
+        }
+
+        .stop.animate .stop-title {
+            animation: fadeSlideUp 0.5s ease 0.6s forwards;
+        }
+
+        @keyframes fadeSlideUp {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .stop-subtitle {
+            font-size: clamp(0.7rem, 1.8vw, 0.95rem);
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: clamp(3px, 0.5vw, 6px);
+            opacity: 0;
+        }
+
+        .stop.animate .stop-subtitle {
+            animation: fadeIn 0.5s ease 0.7s forwards;
+        }
+
+        /* Places grid */
+        .places-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+            gap: var(--gap);
+        }
+
+        .place-item {
+            display: flex;
+            align-items: center;
+            gap: clamp(8px, 2vw, 15px);
+            padding: clamp(12px, 2.5vw, 18px);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: clamp(10px, 2vw, 14px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            cursor: pointer;
+        }
+
+        .place-item:hover, .place-item:focus {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: rgba(255, 215, 0, 0.2);
+            transform: translateX(5px) !important;
+        }
+
+        .stop.animate .place-item {
+            animation: placeReveal 0.4s ease forwards;
+        }
+
+        @keyframes placeReveal {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .place-icon {
+            width: clamp(32px, 6vw, 42px);
+            height: clamp(32px, 6vw, 42px);
+            border-radius: clamp(8px, 1.5vw, 12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            flex-shrink: 0;
+        }
+
+        .place-item:nth-child(odd) .place-icon { background: rgba(255, 215, 0, 0.2); }
+        .place-item:nth-child(even) .place-icon { background: rgba(255, 107, 107, 0.2); }
+
+        .place-name {
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Special sections */
+        .special-section {
+            margin-top: clamp(15px, 3vw, 30px);
+            padding: clamp(12px, 2.5vw, 22px);
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: clamp(12px, 2vw, 18px);
+            border: 1px dashed rgba(255, 215, 0, 0.3);
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        .stop.animate .special-section {
+            animation: sectionFade 0.5s ease forwards;
+        }
+
+        @keyframes sectionFade {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .special-section h4 {
+            font-size: clamp(0.85rem, 2vw, 1.05rem);
+            color: var(--accent-gold);
+            margin-bottom: clamp(10px, 2vw, 18px);
+            display: flex;
+            align-items: center;
+            gap: clamp(6px, 1.5vw, 12px);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: clamp(40px, 8vh, 80px) clamp(15px, 4vw, 30px);
+            position: relative;
+            z-index: 1;
+            opacity: 0;
+        }
+
+        .footer.animate {
+            animation: fadeIn 1s ease forwards;
+        }
+
+        .footer-content {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: clamp(18px, 3vw, 28px);
+            padding: clamp(25px, 5vw, 50px);
+            max-width: min(600px, 90vw);
+            margin: 0 auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.3rem, 4vw, 2rem);
+            color: var(--accent-gold);
+            margin-bottom: clamp(10px, 2vw, 18px);
+        }
+
+        .footer p {
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.8;
+            font-size: clamp(0.85rem, 2vw, 1rem);
+        }
+
+        .travel-stats {
+            display: flex;
+            justify-content: center;
+            gap: clamp(25px, 6vw, 50px);
+            margin-top: clamp(20px, 4vw, 35px);
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .footer.animate .stat {
+            animation: statPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        @keyframes statPop {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-value {
+            font-size: clamp(2rem, 6vw, 3rem);
+            font-weight: 700;
+            color: var(--accent-gold);
+        }
+
+        .stat-label {
+            font-size: clamp(0.7rem, 1.8vw, 0.9rem);
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: clamp(1px, 0.3vw, 2px);
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            top: -20px;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .confetti.animate {
+            animation: confettiFall 3s ease-out forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { top: -20px; opacity: 1; transform: rotate(0deg); }
+            100% { top: 100vh; opacity: 0; transform: rotate(720deg); }
+        }
+
+        /* TV / Large screen specific */
+        @media (min-width: 1920px) {
+            :root {
+                --base-size: 20px;
+            }
+            
+            .container {
+                max-width: 1600px;
+            }
+        }
+
+        @media (min-width: 2560px) {
+            :root {
+                --base-size: 24px;
+            }
+            
+            .container {
+                max-width: 2000px;
+            }
+        }
+
+        /* Tablet landscape */
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+            .places-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Mobile landscape */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .header {
+                padding: 20px 15px 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .stop {
+                margin-bottom: 30px;
+            }
+            
+            .card-slideshow {
+                height: 120px;
+            }
+        }
+
+        /* Small mobile */
+        @media (max-width: 380px) {
+            .route-line {
+                gap: 5px;
+            }
+            
+            .route-city span {
+                font-size: 0.65rem;
+            }
+            
+            .timeline {
+                padding-left: 35px;
+            }
+            
+            .stop-marker {
+                left: -30px;
+                width: 32px;
+                height: 32px;
+            }
+        }
+
+        /* Reduced motion preference */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* High contrast mode */
+        @media (prefers-contrast: high) {
+            .stop-card {
+                border-width: 2px;
+                border-color: rgba(255, 255, 255, 0.3);
+            }
+            
+            .place-item {
+                border-width: 2px;
+            }
+        }
+
+        /* Focus styles for accessibility */
+        *:focus-visible {
+            outline: 3px solid var(--accent-gold);
+            outline-offset: 3px;
+        }
+
+        /* Print styles */
+        @media print {
+            .audio-control, .replay-btn, .car-animation, .particles, .progress-bar, .loading-screen {
+                display: none !important;
+            }
+            
+            body {
+                background: white;
+                color: black;
+            }
+            
+            .stop-card {
+                background: #f5f5f5;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-logo">🗺️</div>
+        <div class="loading-text">Yolculuk Hazırlanıyor...</div>
+        <div class="loading-bar">
+            <div class="loading-progress" id="loadingProgress"></div>
+        </div>
+    </div>
+
+    <!-- Audio Control -->
+    <button class="audio-control" id="audioControl" aria-label="Ses Kontrolü">🔊</button>
+
+    <!-- Slideshow Background -->
+    <div class="slideshow-bg" id="slideshowBg">
+        <div class="slide active" id="bgSlide1"></div>
+        <div class="slide" id="bgSlide2"></div>
+        <div class="slide" id="bgSlide3"></div>
+        <div class="slide-overlay"></div>
+    </div>
+
+    <!-- Location Indicator -->
+    <div class="location-indicator" id="locationIndicator">
+        <span class="icon">📍</span>
+        <span class="text" id="locationText">Yolculuk Başlıyor...</span>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Particles background -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Car animation -->
+    <div class="car-animation" id="car">🚗</div>
+
+    <!-- Replay button -->
+    <button class="replay-btn" id="replayBtn" title="Tekrar Oynat" aria-label="Animasyonu Tekrar Oynat">🔄</button>
+
+    <!-- Header -->
+    <header class="header" id="header">
+        <h1>🗺️ Anadolu Gezi Rotası</h1>
+        <p class="subtitle">TARİH • KÜLTÜR • DOĞA • KEŞİF</p>
+        <div class="route-line" id="routeLine">
+            <div class="route-city" data-delay="0"><span>Uşak</span></div>
+            <span class="route-arrow" data-delay="1">→</span>
+            <div class="route-city" data-delay="2"><span>Konya</span></div>
+            <span class="route-arrow" data-delay="3">→</span>
+            <div class="route-city" data-delay="4"><span>Kapadokya</span></div>
+            <span class="route-arrow" data-delay="5">→</span>
+            <div class="route-city" data-delay="6"><span>Ankara</span></div>
+            <span class="route-arrow" data-delay="7">→</span>
+            <div class="route-city" data-delay="8"><span>🏠</span></div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div class="timeline" id="timeline">
+            
+            <!-- Durak 1: Konya -->
+            <div class="stop" id="stop1" data-location="Konya" data-music="mevlevi">
+                <div class="stop-marker">1</div>
+                <div class="stop-card">
+                    <div class="card-slideshow" id="slideshow1">
+                        <div class="card-slide active" style="background: linear-gradient(45deg, #4ecdc4, #44a08d);">
+                            <div class="card-slide-overlay">
+                                <div class="card-slide-text">📸 Mevlana Müzesi - Yeşil Kubbe</div>
+                            </div>
+                        </div>
+                        <div class="card-slide" style="background: linear-gradient(45deg, #667eea, #764ba2);">
+                            <div class="card-slide-overlay">
+                                <div class="card-slide-text">🌸 Japon Kyoto Parkı</div>
+                            </div>
+                        </div>
+                        <div class="card-slide" style="background: linear-gradient(45deg, #f093fb, #f5576c);">
+                            <div class="card-slide-overlay">
+                                <div class="card-slide-text">🦋 Kelebekler Vadisi</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stop-header">
+                        <div class="stop-icon">🕌</div>
+                        <div>
+                            <h2 class="stop-title">Konya</h2>
+                            <p class="stop-subtitle">Mevlana'nın Şehri • Selçuklu Başkenti</p>
+                        </div>
+                    </div>
+                    <div class="places-grid">
+                        <div class="place-item" style="--delay: 0"><div class="place-icon">🌸</div><span class="place-name">Japon Kyoto Parkı</span></div>
+                        <div class="place-item" style="--delay: 1"><div class="place-icon">🏨</div><span class="place-name">Otel Yerleşme</span></div>
+                        <div class="place-item" style="--delay: 2"><div class="place-icon">🕌</div><span class="place-name">Mevlana Müzesi</span></div>
+                        <div class="place-item" style="--delay: 3"><div class="place-icon">🖼️</div><span class="place-name">Panorama Konya Müzesi</span></div>
+                        <div class="place-item" style="--delay: 4"><div class="place-icon">🏛️</div><span class="place-name">Konya Arkeoloji Müzesi</span></div>
+                        <div class="place-item" style="--delay: 5"><div class="place-icon">⛰️</div><span class="place-name">Alaaddin Tepesi Parkı</span></div>
+                        <div class="place-item" style="--delay: 6"><div class="place-icon">📚</div><span class="place-name">Karatay Medresesi</span></div>
+                        <div class="place-item" style="--delay: 7"><div class="place-icon">🎢</div><span class="place-name">80 Binde Devr-i Alem Parkı</span></div>
+                        <div class="place-item" style="--delay: 8"><div class="place-icon">🦋</div><span class="place-name">Kelebekler Vadisi</span></div>
+                        <div class="place-item" style="--delay: 9"><div class="place-icon">🌙</div><span class="place-name">Otele Dönüş</span></div>
+                    </div>
+                    <div class="special-section" style="--delay: 10">
+                        <h4>☀️ Ertesi Sabah</h4>
+                        <p style="color: rgba(255,255,255,0.7);">Otel kahvaltısı sonrası Nevşehir / Kapadokya yolculuğu</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Durak 2: Kapadokya -->
+            <div class="stop" id="stop2" data-location="Kapadokya" data-music="kapadokya">
+                <div class="stop-marker">2</div>
+                <div class="stop-card">
+                    <div class="card-slideshow" id="slideshow2">
+                        <div class="card-slide active" style="background: linear-gradient(45deg, #f093fb, #f5576c);">
+                            <div class="card-slide-overlay">
+                                <div class="card-slide-text">🎈 Kapadokya Balonları</div>
+                            </div>
+                        </div>
+                        <div class="card-slide" style="background: linear-gradient(45deg, #fa709a, #fee140);">
+                            <div class="card-slide-overlay">
+                                <div class="card-slide-text">🍄 Peri Bacaları</div>
+                            </div>
+                        </div>
+                        <div class="card-slide" style="background: linear-gradient(45deg, #a8edea, #fed6e3);">
+                            <div class="card-slide-overlay">
+                                <div class="card-slide-text">⛪ Göreme Açık Hava Müzesi</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stop-header">
+                        <div class="stop-icon">🎈</div>
+                        <div>
+                            <h2 class="stop-title">Nevşehir / Kapadokya</h2>
+                            <p class="stop-subtitle">Peri Bacaları • UNESCO Dünya Mirası</p>
+                        </div>
+                    </div>
+                    <div class="places-grid">
+                        <div class="place-item" style="--delay: 0"><div class="place-icon">🕊️</div><span class="place-name">Güvercinlik Vadisi</span></div>
+                        <div class="place-item" style="--delay: 1"><div class="place-icon">👸</div><span class="place-name">Üç Güzeller</span></div>
+                        <div class="place-item" style="--delay: 2"><div class="place-icon">⛪</div><span class="place-name">Göreme Açık Hava Müzesi</span></div>
+                        <div class="place-item" style="--delay: 3"><div class="place-icon">📸</div><span class="place-name">Göreme Panorama View</span></div>
+                        <div class="place-item" style="--delay: 4"><div class="place-icon">🌅</div><span class="place-name">Gün Batımı/Doğumu Seyir Noktası</span></div>
+                        <div class="place-item" style="--delay: 5"><div class="place-icon">🏜️</div><span class="place-name">Kızılçukur Vadisi</span></div>
+                        <div class="place-item" style="--delay: 6"><div class="place-icon">🍄</div><span class="place-name">Paşabağları Müze ve Örenyeri</span></div>
+                        <div class="place-item" style="--delay: 7"><div class="place-icon">🏨</div><span class="place-name">Otel Yerleşme</span></div>
+                    </div>
+                    <div class="special-section" style="--delay: 8">
+                        <h4>🚗 Ankara Yolu Üzerinde Uğranacak Yerler</h4>
+                        <div class="places-grid" style="margin-top: 15px;">
+                            <div class="place-item" style="--delay: 9"><div class="place-icon">🔮</div><span class="place-name">İlginç Arkeolojik Desenler</span></div>
+                            <div class="place-item" style="--delay: 10"><div class="place-icon">🗿</div><span class="place-name">Sculpture Park</span></div>
+                            <div class="place-item" style="--delay: 11"><div class="place-icon">🪨</div><span class="place-name">Dikilitaşlar Avanos</span></div>
+                            <div class="place-item" style="--delay: 12"><div class="place-icon">🏰</div><span class="place-name">Açık Saray Müzesi</span></div>
+                            <div class="place-item" style="--delay: 13"><div class="place-icon">🚀</div><span class="place-name">Türksat Lagari Müzesi</span></div>
+                            <div class="place-item" style="--delay: 14"><div class="place-icon">🦇</div><span class="place-name">Tulumtaş Mağarası</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Durak 3: Ankara -->
+            <div class="stop" id="stop3" data-location="Ankara" data-music="ankara">
+                <div class="stop-marker">3</div>
+                <div class="stop-card">
+                    <div class="card-slideshow" id="slideshow3">
+                        <div class="card-slide active" style="background: linear-gradient(45deg, #4facfe, #00f2fe);">
+                            <div class="card-slide-overlay">
+                                <div class="card-slide-text">🇹🇷 Anıtkabir</div>
+                            </div>
+                        </div>
+                        <div class="card-slide" style="background: linear-gradient(45deg, #43e97b, #38f9d7);">
+                            <div class="card-slide-overlay">
+                                <div class="card-slide-text">📚 Millet Kütüphanesi</div>
+                            </div>
+                        </div>
+                        <div class="card-slide" style="background: linear-gradient(45deg, #fa709a, #fee140);">
+                            <div class="card-slide-overlay">
+                                <div class="card-slide-text">🏘️ Hamamönü</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stop-header">
+                        <div class="stop-icon">🏛️</div>
+                        <div>
+                            <h2 class="stop-title">Ankara</h2>
+                            <p class="stop-subtitle">Başkent • Cumhuriyet'in Kalbi</p>
+                        </div>
+                    </div>
+                    <div class="places-grid">
+                        <div class="place-item" style="--delay: 0"><div class="place-icon">🏨</div><span class="place-name">Otel Yerleşme</span></div>
+                        <div class="place-item" style="--delay: 1"><div class="place-icon">🦖</div><span class="place-name">Şehit Cuma Dağ Tabiat Tarihi Müzesi</span></div>
+                        <div class="place-item" style="--delay: 2"><div class="place-icon">🇹🇷</div><span class="place-name">Anıtkabir</span></div>
+                        <div class="place-item" style="--delay: 3"><div class="place-icon">🎨</div><span class="place-name">Cermodern</span></div>
+                        <div class="place-item" style="--delay: 4"><div class="place-icon">⛓️</div><span class="place-name">Ulucanlar Cezaevi Müzesi</span></div>
+                        <div class="place-item" style="--delay: 5"><div class="place-icon">✈️</div><span class="place-name">Türk Hava Kuvvetleri Müzesi</span></div>
+                        <div class="place-item" style="--delay: 6"><div class="place-icon">🌿</div><span class="place-name">Biyosfer Müze</span></div>
+                        <div class="place-item" style="--delay: 7"><div class="place-icon">📚</div><span class="place-name">Millet Kütüphanesi</span></div>
+                        <div class="place-item" style="--delay: 8"><div class="place-icon">⚙️</div><span class="place-name">MKEK Sanayi Müzesi</span></div>
+                        <div class="place-item" style="--delay: 9"><div class="place-icon">🏘️</div><span class="place-name">Hamamönü Tarihi Evleri</span></div>
+                        <div class="place-item" style="--delay: 10"><div class="place-icon">🕯️</div><span class="place-name">15 Temmuz Şehitler Anıtı</span></div>
+                        <div class="place-item" style="--delay: 11"><div class="place-icon">🌙</div><span class="place-name">Otele Dönüş</span></div>
+                    </div>
+                    <div class="special-section" style="--delay: 12">
+                        <h4>☀️ Ertesi Sabah</h4>
+                        <p style="color: rgba(255,255,255,0.7);">Otel kahvaltısı sonrası Uşak yolculuğu</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Durak 4: Uşak Dönüş -->
+            <div class="stop" id="stop4" data-location="Uşak" data-music="journey">
+                <div class="stop-marker">4</div>
+                <div class="stop-card">
+                    <div class="card-slideshow" id="slideshow4">
+                        <div class="card-slide active" style="background: linear-gradient(45deg, #fa709a, #fee140);">
+                            <div class="card-slide-overlay">
+                                <div class="card-slide-text">🏠 Eve Dönüş Yolculuğu</div>
+                            </div>
+                        </div>
+                        <div class="card-slide" style="background: linear-gradient(45deg, #a8edea, #fed6e3);">
+                            <div class="card-slide-overlay">
+                                <div class="card-slide-text">☕ Yol Molası</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stop-header">
+                        <div class="stop-icon">🏠</div>
+                        <div>
+                            <h2 class="stop-title">Uşak Dönüş Yolculuğu</h2>
+                            <p class="stop-subtitle">Eve Dönüş • Son Duraklar</p>
+                        </div>
+                    </div>
+                    <div class="places-grid">
+                        <div class="place-item" style="--delay: 0"><div class="place-icon">🛩️</div><span class="place-name">MSÖ Air Space Müzesi</span></div>
+                        <div class="place-item" style="--delay: 1"><div class="place-icon">🏔️</div><span class="place-name">Kırkinler Kaya Yerleşimleri</span></div>
+                        <div class="place-item" style="--delay: 2"><div class="place-icon">🏙️</div><span class="place-name">Afyonkarahisar (Opsiyonel)</span></div>
+                        <div class="place-item" style="--delay: 3"><div class="place-icon">☕</div><span class="place-name">Dinlenme Tesisi Molası</span></div>
+                        <div class="place-item" style="--delay: 4"><div class="place-icon">🏠</div><span class="place-name">Eve Varış 🎉</span></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" id="footer">
+        <div class="footer-content">
+            <h3>✨ Harika Bir Yolculuk!</h3>
+            <p>Türkiye'nin en güzel köşelerini keşfetmeye hazır mısınız?</p>
+            <div class="travel-stats">
+                <div class="stat" style="--delay: 0">
+                    <div class="stat-value" data-target="4">0</div>
+                    <div class="stat-label">Şehir</div>
+                </div>
+                <div class="stat" style="--delay: 1">
+                    <div class="stat-value" data-target="40">0</div>
+                    <div class="stat-label">Durak</div>
+                </div>
+                <div class="stat" style="--delay: 2">
+                    <div class="stat-value">∞</div>
+                    <div class="stat-label">Anı</div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Audio Elements -->
+    <audio id="bgMusic" loop preload="auto"></audio>
+    <audio id="carSound" preload="auto"></audio>
+    <audio id="transitionSound" preload="auto"></audio>
+
+    <script>
+        // ===== AUDIO SYSTEM =====
+        class AudioManager {
+            constructor() {
+                this.bgMusic = document.getElementById('bgMusic');
+                this.carSound = document.getElementById('carSound');
+                this.transitionSound = document.getElementById('transitionSound');
+                this.isMuted = false;
+                this.currentTrack = null;
+                this.audioContext = null;
+                
+                // Web Audio API için context
+                this.initAudioContext();
+            }
+
+            initAudioContext() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Web Audio API not supported');
+                }
+            }
+
+            // Kültürel müzikler için URL'ler (ücretsiz kaynaklardan)
+            getMusicUrl(type) {
+                const musicUrls = {
+                    mevlevi: 'https://cdn.freesound.org/previews/344/344414_6399901-lq.mp3', // Ney sesi
+                    kapadokya: 'https://cdn.freesound.org/previews/514/514151_7549989-lq.mp3', // Ambient doğa
+                    ankara: 'https://cdn.freesound.org/previews/456/456965_8224400-lq.mp3', // Şehir ambiyans
+                    journey: 'https://cdn.freesound.org/previews/531/531015_11534364-lq.mp3', // Yolculuk
+                    intro: 'https://cdn.freesound.org/previews/411/411642_5121236-lq.mp3' // Giriş
+                };
+                return musicUrls[type] || musicUrls.intro;
+            }
+
+            getSoundUrl(type) {
+                const soundUrls = {
+                    car: 'https://cdn.freesound.org/previews/462/462090_6891632-lq.mp3', // Araba
+                    transition: 'https://cdn.freesound.org/previews/521/521973_11534364-lq.mp3', // Geçiş sesi
+                    success: 'https://cdn.freesound.org/previews/320/320655_5260872-lq.mp3' // Başarı
+                };
+                return soundUrls[type];
+            }
+
+            async playBackgroundMusic(type) {
+                if (this.isMuted) return;
+                
+                try {
+                    const url = this.getMusicUrl(type);
+                    this.bgMusic.src = url;
+                    this.bgMusic.volume = 0.3;
+                    
+                    // Fade in effect
+                    this.bgMusic.volume = 0;
+                    await this.bgMusic.play();
+                    
+                    let volume = 0;
+                    const fadeIn = setInterval(() => {
+                        volume += 0.05;
+                        if (volume >= 0.3) {
+                            this.bgMusic.volume = 0.3;
+                            clearInterval(fadeIn);
+                        } else {
+                            this.bgMusic.volume = volume;
+                        }
+                    }, 100);
+                    
+                    this.currentTrack = type;
+                } catch (e) {
+                    console.log('Audio playback failed:', e);
+                }
+            }
+
+            async fadeOutAndChangeMusic(newType) {
+                if (this.isMuted || this.currentTrack === newType) return;
+                
+                // Fade out current
+                let volume = this.bgMusic.volume;
+                const fadeOut = setInterval(() => {
+                    volume -= 0.05;
+                    if (volume <= 0) {
+                        this.bgMusic.volume = 0;
+                        clearInterval(fadeOut);
+                        this.playBackgroundMusic(newType);
+                    } else {
+                        this.bgMusic.volume = volume;
+                    }
+                }, 50);
+            }
+
+            async playCarSound() {
+                if (this.isMuted) return;
+                
+                try {
+                    this.carSound.src = this.getSoundUrl('car');
+                    this.carSound.volume = 0.4;
+                    await this.carSound.play();
+                } catch (e) {
+                    console.log('Car sound failed:', e);
+                }
+            }
+
+            async playTransitionSound() {
+                if (this.isMuted) return;
+                
+                try {
+                    this.transitionSound.src = this.getSoundUrl('transition');
+                    this.transitionSound.volume = 0.5;
+                    await this.transitionSound.play();
+                } catch (e) {
+                    console.log('Transition sound failed:', e);
+                }
+            }
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                
+                if (this.isMuted) {
+                    this.bgMusic.pause();
+                    this.carSound.pause();
+                } else {
+                    if (this.currentTrack) {
+                        this.playBackgroundMusic(this.currentTrack);
+                    }
+                }
+                
+                return this.isMuted;
+            }
+
+            stopAll() {
+                this.bgMusic.pause();
+                this.carSound.pause();
+                this.bgMusic.currentTime = 0;
+                this.carSound.currentTime = 0;
+            }
+        }
+
+        // ===== SLIDESHOW SYSTEM =====
+        class SlideshowManager {
+            constructor() {
+                this.slideshows = {};
+                this.intervals = {};
+            }
+
+            init(containerId) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                const slides = container.querySelectorAll('.card-slide');
+                this.slideshows[containerId] = {
+                    slides: slides,
+                    currentIndex: 0
+                };
+            }
+
+            start(containerId, intervalTime = 3000) {
+                if (!this.slideshows[containerId]) this.init(containerId);
+                
+                const data = this.slideshows[containerId];
+                if (!data || data.slides.length <= 1) return;
+                
+                this.intervals[containerId] = setInterval(() => {
+                    data.slides[data.currentIndex].classList.remove('active');
+                    data.currentIndex = (data.currentIndex + 1) % data.slides.length;
+                    data.slides[data.currentIndex].classList.add('active');
+                }, intervalTime);
+            }
+
+            stop(containerId) {
+                if (this.intervals[containerId]) {
+                    clearInterval(this.intervals[containerId]);
+                    delete this.intervals[containerId];
+                }
+            }
+
+            stopAll() {
+                Object.keys(this.intervals).forEach(id => this.stop(id));
+            }
+        }
+
+        // ===== BACKGROUND SLIDESHOW =====
+        class BackgroundSlideshow {
+            constructor() {
+                this.slides = document.querySelectorAll('.slideshow-bg .slide');
+                this.currentIndex = 0;
+                this.interval = null;
+                
+                // Gradient backgrounds for each location
+                this.backgrounds = {
+                    intro: [
+                        'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+                        'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)'
+                    ],
+                    konya: [
+                        'linear-gradient(135deg, #134e5e 0%, #71b280 100%)',
+                        'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)',
+                        'linear-gradient(135deg, #2c3e50 0%, #3498db 100%)'
+                    ],
+                    kapadokya: [
+                        'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                        'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'
+                    ],
+                    ankara: [
+                        'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                        'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                    ],
+                    usak: [
+                        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                        'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'
+                    ]
+                };
+                
+                this.currentLocation = 'intro';
+            }
+
+            setLocation(location) {
+                this.currentLocation = location.toLowerCase();
+                this.updateSlides();
+            }
+
+            updateSlides() {
+                const bgs = this.backgrounds[this.currentLocation] || this.backgrounds.intro;
+                this.slides.forEach((slide, index) => {
+                    if (bgs[index]) {
+                        slide.style.background = bgs[index];
+                    }
+                });
+            }
+
+            start() {
+                this.interval = setInterval(() => {
+                    this.slides[this.currentIndex].classList.remove('active');
+                    this.currentIndex = (this.currentIndex + 1) % this.slides.length;
+                    this.slides[this.currentIndex].classList.add('active');
+                }, 5000);
+            }
+
+            stop() {
+                if (this.interval) {
+                    clearInterval(this.interval);
+                    this.interval = null;
+                }
+            }
+        }
+
+        // ===== LOCATION INDICATOR =====
+        class LocationIndicator {
+            constructor() {
+                this.element = document.getElementById('locationIndicator');
+                this.textElement = document.getElementById('locationText');
+            }
+
+            show(location) {
+                this.textElement.textContent = location;
+                this.element.classList.add('show');
+            }
+
+            hide() {
+                this.element.classList.remove('show');
+            }
+
+            update(location) {
+                this.textElement.textContent = location;
+            }
+        }
+
+        // ===== MAIN ANIMATION CONTROLLER =====
+        class AnimationController {
+            constructor() {
+                this.audioManager = new AudioManager();
+                this.slideshowManager = new SlideshowManager();
+                this.bgSlideshow = new BackgroundSlideshow();
+                this.locationIndicator = new LocationIndicator();
+                
+                this.steps = [];
+                this.currentStep = 0;
+                this.isPlaying = false;
+                this.progressBar = document.getElementById('progressBar');
+            }
+
+            addStep(callback, delay) {
+                this.steps.push({ callback, delay });
+            }
+
+            async play() {
+                this.isPlaying = true;
+                this.currentStep = 0;
+                
+                // Start background slideshow
+                this.bgSlideshow.start();
+                
+                // Start intro music
+                await this.audioManager.playBackgroundMusic('intro');
+                
+                for (let i = 0; i < this.steps.length; i++) {
+                    if (!this.isPlaying) break;
+                    
+                    await new Promise(resolve => setTimeout(resolve, this.steps[i].delay));
+                    this.steps[i].callback();
+                    
+                    const progress = ((i + 1) / this.steps.length) * 100;
+                    this.progressBar.style.width = progress + '%';
+                }
+            }
+
+            reset() {
+                this.isPlaying = false;
+                this.currentStep = 0;
+                this.progressBar.style.width = '0%';
+                
+                // Stop all audio and slideshows
+                this.audioManager.stopAll();
+                this.slideshowManager.stopAll();
+                this.bgSlideshow.stop();
+                this.locationIndicator.hide();
+                
+                // Remove all animate classes
+                document.querySelectorAll('.animate').forEach(el => {
+                    el.classList.remove('animate');
+                });
+                
+                // Reset stat values
+                document.querySelectorAll('.stat-value[data-target]').forEach(el => {
+                    el.textContent = '0';
+                });
+            }
+        }
+
+        // ===== INITIALIZATION =====
+        const controller = new AnimationController();
+
+        // Create particles
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 40; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+
+        // Setup animation sequence
+        function setupAnimations() {
+            controller.steps = [];
+
+            // Header animation
+            controller.addStep(() => {
+                document.getElementById('header').classList.add('animate');
+                controller.locationIndicator.show('Yolculuk Başlıyor...');
+            }, 500);
+
+            // Car drives across with sound
+            controller.addStep(() => {
+                const car = document.getElementById('car');
+                car.classList.add('animate');
+                controller.audioManager.playCarSound();
+            }, 800);
+
+            // Route cities appear one by one
+            const routeItems = document.querySelectorAll('#routeLine .route-city, #routeLine .route-arrow');
+            routeItems.forEach((item, index) => {
+                controller.addStep(() => {
+                    item.classList.add('animate');
+                    controller.audioManager.playTransitionSound();
+                }, 200);
+            });
+
+            // Timeline line grows
+            controller.addStep(() => {
+                document.getElementById('timeline').classList.add('animate');
+            }, 500);
+
+            // Stop 1 - Konya
+            controller.addStep(() => {
+                const stop = document.getElementById('stop1');
+                stop.classList.add('animate');
+                animatePlaceItems(stop);
+                
+                // Change location
+                controller.locationIndicator.update('📍 Konya - Mevlana\'nın Şehri');
+                controller.bgSlideshow.setLocation('konya');
+                controller.audioManager.fadeOutAndChangeMusic('mevlevi');
+                controller.slideshowManager.start('slideshow1');
+            }, 1000);
+
+            // Transition to Stop 2
+            controller.addStep(() => {
+                controller.locationIndicator.update('🚗 Kapadokya\'ya Yolculuk...');
+                document.getElementById('car').classList.remove('animate');
+                void document.getElementById('car').offsetWidth; // Reflow
+                document.getElementById('car').classList.add('animate');
+                controller.audioManager.playCarSound();
+            }, 3000);
+
+            // Stop 2 - Kapadokya
+            controller.addStep(() => {
+                const stop = document.getElementById('stop2');
+                stop.classList.add('animate');
+                animatePlaceItems(stop);
+                
+                controller.locationIndicator.update('📍 Kapadokya - Peri Bacaları');
+                controller.bgSlideshow.setLocation('kapadokya');
+                controller.audioManager.fadeOutAndChangeMusic('kapadokya');
+                controller.slideshowManager.start('slideshow2');
+            }, 1500);
+
+            // Transition to Stop 3
+            controller.addStep(() => {
+                controller.locationIndicator.update('🚗 Ankara\'ya Yolculuk...');
+                document.getElementById('car').classList.remove('animate');
+                void document.getElementById('car').offsetWidth;
+                document.getElementById('car').classList.add('animate');
+                controller.audioManager.playCarSound();
+            }, 3500);
+
+            // Stop 3 - Ankara
+            controller.addStep(() => {
+                const stop = document.getElementById('stop3');
+                stop.classList.add('animate');
+                animatePlaceItems(stop);
+                
+                controller.locationIndicator.update('📍 Ankara - Başkent');
+                controller.bgSlideshow.setLocation('ankara');
+                controller.audioManager.fadeOutAndChangeMusic('ankara');
+                controller.slideshowManager.start('slideshow3');
+            }, 1500);
+
+            // Transition to Stop 4
+            controller.addStep(() => {
+                controller.locationIndicator.update('🚗 Eve Dönüş Yolculuğu...');
+                document.getElementById('car').classList.remove('animate');
+                void document.getElementById('car').offsetWidth;
+                document.getElementById('car').classList.add('animate');
+                controller.audioManager.playCarSound();
+            }, 3500);
+
+            // Stop 4 - Uşak
+            controller.addStep(() => {
+                const stop = document.getElementById('stop4');
+                stop.classList.add('animate');
+                animatePlaceItems(stop);
+                
+                controller.locationIndicator.update('📍 Uşak - Eve Varış');
+                controller.bgSlideshow.setLocation('usak');
+                controller.audioManager.fadeOutAndChangeMusic('journey');
+                controller.slideshowManager.start('slideshow4');
+            }, 1500);
+
+            // Footer
+            controller.addStep(() => {
+                const footer = document.getElementById('footer');
+                footer.classList.add('animate');
+                
+                controller.locationIndicator.update('🎉 Yolculuk Tamamlandı!');
+                
+                const stats = footer.querySelectorAll('.stat');
+                stats.forEach((stat, index) => {
+                    setTimeout(() => {
+                        stat.style.animation = `statPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards`;
+                    }, index * 200);
+                });
+
+                setTimeout(() => animateCountUp(), 500);
+                setTimeout(() => createConfetti(), 800);
+            }, 2500);
+
+            // Hide location indicator
+            controller.addStep(() => {
+                setTimeout(() => {
+                    controller.locationIndicator.hide();
+                }, 3000);
+            }, 1000);
+        }
+
+        function animatePlaceItems(stop) {
+            const items = stop.querySelectorAll('.place-item');
+            items.forEach((item, index) => {
+                setTimeout(() => {
+                    item.style.animation = `placeReveal 0.4s ease forwards`;
+                }, index * 80);
+            });
+
+            const special = stop.querySelector('.special-section');
+            if (special) {
+                setTimeout(() => {
+                    special.style.animation = `sectionFade 0.5s ease forwards`;
+                }, items.length * 80 + 200);
+            }
+        }
+
+        function animateCountUp() {
+            document.querySelectorAll('.stat-value[data-target]').forEach(el => {
+                const target = parseInt(el.dataset.target);
+                let current = 0;
+                const increment = target / 20;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        el.textContent = target + '+';
+                        clearInterval(timer);
+                    } else {
+                        el.textContent = Math.floor(current);
+                    }
+                }, 50);
+            });
+        }
+
+        function createConfetti() {
+            const colors = ['#ffd700', '#ff8c00', '#ff6347', '#4ecdc4', '#f093fb', '#4facfe'];
+            for (let i = 0; i < 60; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                confetti.style.width = (Math.random() * 12 + 6) + 'px';
+                confetti.style.height = (Math.random() * 12 + 6) + 'px';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => confetti.classList.add('animate'), 10);
+                setTimeout(() => confetti.remove(), 3500);
+            }
+        }
+
+        // ===== LOADING SCREEN =====
+        async function initializeApp() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            const loadingProgress = document.getElementById('loadingProgress');
+            
+            // Simulate loading with progress
+            for (let i = 0; i <= 100; i += 5) {
+                loadingProgress.style.width = i + '%';
+                await new Promise(r => setTimeout(r, 50));
+            }
+            
+            // Hide loading screen
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                
+                // Start animations
+                setupAnimations();
+                controller.play();
+            }, 500);
+        }
+
+        // ===== EVENT LISTENERS =====
+        
+        // Audio control
+        document.getElementById('audioControl').addEventListener('click', () => {
+            const btn = document.getElementById('audioControl');
+            const isMuted = controller.audioManager.toggleMute();
+            btn.textContent = isMuted ? '🔇' : '🔊';
+            btn.classList.toggle('muted', isMuted);
+        });
+
+        // Replay button
+        document.getElementById('replayBtn').addEventListener('click', () => {
+            controller.reset();
+            document.getElementById('car').classList.remove('animate');
+            
+            setTimeout(() => {
+                setupAnimations();
+                controller.play();
+            }, 500);
+        });
+
+        // Resume AudioContext on user interaction (for browsers that require it)
+        document.addEventListener('click', () => {
+            if (controller.audioManager.audioContext?.state === 'suspended') {
+                controller.audioManager.audioContext.resume();
+            }
+        }, { once: true });
+
+        // Handle visibility change (pause when tab is hidden)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                controller.audioManager.bgMusic.pause();
+            } else if (!controller.audioManager.isMuted && controller.audioManager.currentTrack) {
+                controller.audioManager.bgMusic.play();
+            }
+        });
+
+        // Start app when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+    </script>
+</body>
+</html>
