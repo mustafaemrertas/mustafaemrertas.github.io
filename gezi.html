@@ -4,153 +4,849 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1a1a2e">
-    <meta name="msapplication-TileColor" content="#1a1a2e">
-    
-    <!-- TV & Large Display Support -->
-    <meta name="tv-app-capable" content="yes">
-    
-    <title>Anadolu Gezi Rotası | İmmersive Deneyim</title>
-    
-    <!-- Preconnect for faster loading -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#87CEEB">
+    <title>Anadolu Gezi Rotası | Harita Deneyimi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        :root {
-            /* Responsive units */
-            --base-size: clamp(14px, 2vw, 18px);
-            --heading-size: clamp(1.8rem, 5vw, 3.5rem);
-            --subheading-size: clamp(1.2rem, 3vw, 2rem);
-            --card-padding: clamp(15px, 3vw, 30px);
-            --gap: clamp(10px, 2vw, 20px);
-            
-            /* Safe areas for notched devices */
-            --safe-top: env(safe-area-inset-top, 0px);
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
-            --safe-left: env(safe-area-inset-left, 0px);
-            --safe-right: env(safe-area-inset-right, 0px);
-            
-            /* Colors */
-            --bg-primary: #1a1a2e;
-            --bg-secondary: #16213e;
-            --bg-tertiary: #0f3460;
-            --accent-gold: #ffd700;
-            --accent-orange: #ff8c00;
-            --accent-red: #ff6347;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
         }
 
-        html {
-            font-size: var(--base-size);
-            scroll-behavior: smooth;
+        :root {
+            --sky-day: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            --sky-sunset: linear-gradient(180deg, #FF6B35 0%, #F7C59F 30%, #EFEFEF 100%);
+            --sky-night: linear-gradient(180deg, #0F0F23 0%, #1A1A3E 50%, #2D2D5A 100%);
+            --sky-sunrise: linear-gradient(180deg, #FFB347 0%, #FFCC33 30%, #87CEEB 100%);
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Nunito', sans-serif;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
-            min-height: 100vh;
-            min-height: 100dvh;
-            color: #fff;
-            overflow-x: hidden;
-            padding-top: var(--safe-top);
-            padding-bottom: var(--safe-bottom);
-            padding-left: var(--safe-left);
-            padding-right: var(--safe-right);
+            background: var(--sky-day);
+            transition: background 2s ease;
         }
 
-        /* Loading Screen */
-        .loading-screen {
+        body.sunset { background: var(--sky-sunset); }
+        body.night { background: var(--sky-night); }
+        body.sunrise { background: var(--sky-sunrise); }
+
+        /* ===== INTRO SCREEN ===== */
+        .intro-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            height: 100dvh;
-            background: linear-gradient(135deg, var(--bg-primary), var(--bg-tertiary));
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 10000;
-            transition: opacity 0.8s ease, visibility 0.8s ease;
+            transition: opacity 1s ease, transform 1s ease;
         }
 
-        .loading-screen.hidden {
+        .intro-screen.hidden {
             opacity: 0;
-            visibility: hidden;
+            transform: scale(1.1);
+            pointer-events: none;
         }
 
-        .loading-logo {
-            font-size: clamp(4rem, 15vw, 8rem);
-            animation: bounce 1s ease infinite;
+        .intro-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: clamp(2rem, 8vw, 4rem);
+            color: white;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+            animation: bounceIn 1s ease;
         }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
+        .intro-subtitle {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 40px;
         }
 
-        .loading-text {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(1.2rem, 4vw, 2rem);
-            color: var(--accent-gold);
-            margin-top: 20px;
-            animation: pulse 1.5s ease infinite;
+        .intro-route {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 50px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 0 20px;
+        }
+
+        .intro-city {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 30px;
+            color: white;
+            font-weight: 700;
+            font-size: clamp(0.8rem, 2vw, 1rem);
+        }
+
+        .intro-arrow {
+            color: rgba(255,255,255,0.6);
+            font-size: 1.5rem;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            padding: 20px 50px;
+            font-family: 'Fredoka One', cursive;
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            color: #333;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 5px 0 #CC8400;
+            transition: all 0.2s ease;
+            animation: pulse 2s ease infinite;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 8px 0 #CC8400;
+        }
+
+        .start-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3), 0 2px 0 #CC8400;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
-        .loading-bar {
-            width: clamp(200px, 60vw, 400px);
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 4px;
-            margin-top: 30px;
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ===== MAIN CONTAINER ===== */
+        .game-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
             overflow: hidden;
         }
 
-        .loading-progress {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent-gold), var(--accent-orange));
-            width: 0%;
-            transition: width 0.3s ease;
+        /* ===== SUN & MOON ===== */
+        .celestial {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            transition: all 2s ease;
+            z-index: 5;
         }
 
-        /* Audio Control Button */
-        .audio-control {
-            position: fixed;
-            top: calc(var(--safe-top) + 20px);
-            right: calc(var(--safe-right) + 20px);
-            width: clamp(44px, 8vw, 60px);
-            height: clamp(44px, 8vw, 60px);
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
+        .sun {
+            background: radial-gradient(circle, #FFD700 0%, #FFA500 100%);
+            box-shadow: 0 0 60px #FFD700, 0 0 100px #FFA50080;
+            top: 50px;
+            right: 100px;
+        }
+
+        .sun.setting {
+            top: 70%;
+            right: 50px;
+            background: radial-gradient(circle, #FF6B35 0%, #FF4500 100%);
+            box-shadow: 0 0 80px #FF6B35;
+        }
+
+        .sun.hidden {
+            top: 120%;
+            opacity: 0;
+        }
+
+        .sun.rising {
+            top: 70%;
+            right: 50px;
+            background: radial-gradient(circle, #FFB347 0%, #FF8C00 100%);
+            box-shadow: 0 0 80px #FFB347;
+        }
+
+        .moon {
+            background: radial-gradient(circle at 30% 30%, #FFFACD 0%, #F0E68C 100%);
+            box-shadow: 0 0 40px rgba(255,250,205,0.5);
+            top: -100px;
+            right: 150px;
+            opacity: 0;
+        }
+
+        .moon.visible {
+            top: 60px;
+            opacity: 1;
+        }
+
+        .moon.hidden {
+            top: 120%;
+            opacity: 0;
+        }
+
+        /* Stars */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 2s ease;
+        }
+
+        .stars.visible {
+            opacity: 1;
+        }
+
+        .star {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: white;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            animation: twinkle 2s ease infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* ===== TURKEY MAP ===== */
+        .map-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70%;
+            transition: transform 0.5s ease;
+        }
+
+        .turkey-map {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Simplified Turkey shape with grass */
+        .land {
+            position: absolute;
+            bottom: 0;
+            left: -5%;
+            width: 110%;
+            height: 60%;
+            background: linear-gradient(180deg, #7CB342 0%, #558B2F 50%, #33691E 100%);
+            border-radius: 40% 60% 0 0 / 30% 20% 0 0;
+            box-shadow: inset 0 20px 60px rgba(0,0,0,0.1);
+        }
+
+        /* Road/Route */
+        .road {
+            position: absolute;
+            bottom: 15%;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            z-index: 10;
+        }
+
+        .road-path {
+            position: absolute;
+            height: 30px;
+            background: #555;
+            border-radius: 15px;
+            box-shadow: 0 4px 0 #333;
+        }
+
+        .road-path::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            right: 10px;
+            height: 4px;
+            background: repeating-linear-gradient(90deg, #FFD700 0, #FFD700 20px, transparent 20px, transparent 40px);
+            transform: translateY(-50%);
+        }
+
+        /* City markers */
+        .city-marker {
+            position: absolute;
+            z-index: 20;
             cursor: pointer;
-            z-index: 1000;
             transition: all 0.3s ease;
         }
 
-        .audio-control:hover, .audio-control:focus {
-            background: rgba(255,215,0,0.2);
+        .city-marker.visited .marker-pin {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+        }
+
+        .city-marker.current .marker-pin {
+            animation: currentCity 1s ease infinite;
+        }
+
+        @keyframes currentCity {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .marker-pin {
+            width: 40px;
+            height: 50px;
+            background: linear-gradient(135deg, #E53935, #B71C1C);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 10px;
+        }
+
+        .marker-pin::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 12px solid #B71C1C;
+        }
+
+        .marker-icon {
+            font-size: 1.2rem;
+        }
+
+        .marker-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* ===== CAR ===== */
+        .car {
+            position: absolute;
+            z-index: 50;
+            transition: left 3s ease-in-out, bottom 0.5s ease;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
+        }
+
+        .car-body {
+            width: 80px;
+            height: 45px;
+            position: relative;
+        }
+
+        .car-top {
+            position: absolute;
+            top: 0;
+            left: 15px;
+            width: 50px;
+            height: 22px;
+            background: linear-gradient(180deg, #FF5722 0%, #E64A19 100%);
+            border-radius: 10px 10px 0 0;
+        }
+
+        .car-top::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 18px;
+            height: 12px;
+            background: linear-gradient(180deg, #81D4FA, #4FC3F7);
+            border-radius: 3px;
+        }
+
+        .car-top::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 18px;
+            height: 12px;
+            background: linear-gradient(180deg, #81D4FA, #4FC3F7);
+            border-radius: 3px;
+        }
+
+        .car-bottom {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            width: 80px;
+            height: 20px;
+            background: linear-gradient(180deg, #F44336 0%, #D32F2F 100%);
+            border-radius: 5px;
+        }
+
+        .car-bottom::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 15px;
+            height: 8px;
+            background: #FFD54F;
+            border-radius: 2px;
+        }
+
+        .car-bottom::after {
+            content: '';
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 8px;
+            background: #EF5350;
+            border-radius: 2px;
+        }
+
+        .wheel {
+            position: absolute;
+            bottom: 0;
+            width: 18px;
+            height: 18px;
+            background: #333;
+            border-radius: 50%;
+            border: 3px solid #666;
+        }
+
+        .wheel::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background: #999;
+            border-radius: 50%;
+        }
+
+        .wheel-front { left: 10px; }
+        .wheel-back { right: 10px; }
+
+        .car.driving .wheel {
+            animation: wheelSpin 0.3s linear infinite;
+        }
+
+        @keyframes wheelSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Exhaust smoke */
+        .exhaust {
+            position: absolute;
+            left: -10px;
+            bottom: 12px;
+            opacity: 0;
+        }
+
+        .car.driving .exhaust {
+            opacity: 1;
+        }
+
+        .smoke {
+            width: 10px;
+            height: 10px;
+            background: rgba(200,200,200,0.6);
+            border-radius: 50%;
+            position: absolute;
+            animation: smoke 0.8s ease infinite;
+        }
+
+        .smoke:nth-child(2) { animation-delay: 0.2s; left: -8px; }
+        .smoke:nth-child(3) { animation-delay: 0.4s; left: -16px; }
+
+        @keyframes smoke {
+            0% { transform: scale(0.5) translateY(0); opacity: 0.6; }
+            100% { transform: scale(1.5) translateY(-20px); opacity: 0; }
+        }
+
+        /* ===== LOCATION POPUP ===== */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .popup-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .location-popup {
+            position: absolute;
+            z-index: 200;
+            width: clamp(300px, 80vw, 450px);
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            transform: scale(0) translateY(20px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .location-popup.visible {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .popup-image {
+            width: 100%;
+            height: 150px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .popup-image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .popup-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .popup-content {
+            padding: 20px;
+        }
+
+        .popup-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .popup-subtitle {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .popup-description {
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .popup-places {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .popup-place-tag {
+            background: #f0f0f0;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #555;
+        }
+
+        /* ===== CONTINUE BUTTON ===== */
+        .continue-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3), 0 4px 0 #1B5E20;
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .continue-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+            animation: bounceBtn 2s ease infinite;
+        }
+
+        .continue-btn:hover {
+            transform: translateX(-50%) translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 6px 0 #1B5E20;
+        }
+
+        .continue-btn:active {
+            transform: translateX(-50%) translateY(2px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3), 0 2px 0 #1B5E20;
+        }
+
+        .continue-btn svg {
+            width: 30px;
+            height: 30px;
+            fill: white;
+        }
+
+        @keyframes bounceBtn {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        .continue-text {
+            position: fixed;
+            bottom: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .continue-text.visible {
+            opacity: 1;
+        }
+
+        /* ===== SLEEP ANIMATION OVERLAY ===== */
+        .sleep-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+
+        .sleep-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .sleep-icon {
+            font-size: 6rem;
+            margin-bottom: 20px;
+            animation: sleepFloat 2s ease infinite;
+        }
+
+        @keyframes sleepFloat {
+            0%, 100% { transform: translateY(0) rotate(-5deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        .sleep-text {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .sleep-zzz {
+            font-size: 2rem;
+            color: #FFD700;
+            animation: zzzFloat 1.5s ease infinite;
+        }
+
+        .sleep-zzz span {
+            display: inline-block;
+            animation: zzzFade 1.5s ease infinite;
+        }
+
+        .sleep-zzz span:nth-child(2) { animation-delay: 0.3s; }
+        .sleep-zzz span:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes zzzFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes zzzFade {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* ===== BREAKFAST ANIMATION ===== */
+        .breakfast-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #FFE0B2 0%, #FFCC80 100%);
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+
+        .breakfast-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .breakfast-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: breakfastBounce 0.8s ease infinite;
+        }
+
+        @keyframes breakfastBounce {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            75% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        .breakfast-text {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.8rem;
+            color: #5D4037;
+        }
+
+        .breakfast-items {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            font-size: 2.5rem;
+        }
+
+        .breakfast-items span {
+            animation: itemPop 0.5s ease forwards;
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        @keyframes itemPop {
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .progress-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: clamp(200px, 60vw, 400px);
+            z-index: 400;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-label {
+            text-align: center;
+            margin-top: 8px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+            font-size: 0.9rem;
+        }
+
+        /* ===== AUDIO CONTROL ===== */
+        .audio-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 400;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .audio-control:hover {
             transform: scale(1.1);
         }
 
@@ -158,1891 +854,895 @@
             opacity: 0.5;
         }
 
-        /* Audio Status Indicator */
-        .audio-status {
+        /* ===== MUSIC URL INPUT ===== */
+        .music-settings {
             position: fixed;
-            top: calc(var(--safe-top) + 90px);
-            right: calc(var(--safe-right) + 20px);
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            color: var(--accent-gold);
-            opacity: 0;
-            transform: translateX(20px);
-            transition: all 0.3s ease;
-            z-index: 999;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            top: 80px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 400;
+            width: 280px;
+            display: none;
         }
 
-        .audio-status.show {
-            opacity: 1;
-            transform: translateX(0);
+        .music-settings.visible {
+            display: block;
+            animation: slideIn 0.3s ease;
         }
 
-        .audio-status .equalizer {
-            display: flex;
-            align-items: flex-end;
-            gap: 2px;
-            height: 12px;
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .audio-status .bar {
-            width: 3px;
-            background: var(--accent-gold);
-            animation: equalize 0.8s ease infinite;
+        .music-settings label {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
         }
 
-        .audio-status .bar:nth-child(1) { animation-delay: 0s; }
-        .audio-status .bar:nth-child(2) { animation-delay: 0.2s; }
-        .audio-status .bar:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes equalize {
-            0%, 100% { height: 4px; }
-            50% { height: 12px; }
-        }
-
-        /* Slideshow Background */
-        .slideshow-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .music-settings input {
             width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
         }
 
-        .slide {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .music-settings input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .music-settings button {
             width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            opacity: 0;
-            transition: opacity 1.5s ease;
-            filter: brightness(0.3) blur(2px);
-        }
-
-        .slide.active {
-            opacity: 1;
-        }
-
-        .slide-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(26,26,46,0.85), rgba(15,52,96,0.85));
-        }
-
-        /* Location indicator */
-        .location-indicator {
-            position: fixed;
-            bottom: calc(var(--safe-bottom) + 100px);
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
-            padding: clamp(10px, 2vw, 15px) clamp(20px, 4vw, 40px);
-            border-radius: 50px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 100;
-            opacity: 0;
-            transition: all 0.5s ease;
-            border: 1px solid rgba(255,215,0,0.3);
-        }
-
-        .location-indicator.show {
-            opacity: 1;
-        }
-
-        .location-indicator .icon {
-            font-size: clamp(1.2rem, 3vw, 1.5rem);
-            animation: locationPulse 2s ease infinite;
-        }
-
-        @keyframes locationPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-        }
-
-        .location-indicator .text {
-            font-size: clamp(0.85rem, 2vw, 1rem);
-            color: var(--accent-gold);
-            font-weight: 500;
-        }
-
-        /* Floating particles */
-        .particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            overflow: hidden;
-            z-index: 0;
-        }
-
-        .particle {
-            position: absolute;
-            width: clamp(2px, 0.5vw, 4px);
-            height: clamp(2px, 0.5vw, 4px);
-            background: rgba(255, 215, 0, 0.6);
-            border-radius: 50%;
-            animation: float 15s infinite linear;
-        }
-
-        @keyframes float {
-            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
-        }
-
-        /* Progress bar */
-        .progress-bar {
-            position: fixed;
-            top: var(--safe-top);
-            left: 0;
-            height: clamp(3px, 0.5vw, 5px);
-            background: linear-gradient(90deg, var(--accent-gold), var(--accent-orange), var(--accent-red));
-            width: 0;
-            z-index: 1000;
-            transition: width 0.3s ease;
-        }
-
-        /* Replay Button */
-        .replay-btn {
-            position: fixed;
-            bottom: calc(var(--safe-bottom) + 30px);
-            right: calc(var(--safe-right) + 30px);
-            width: clamp(50px, 10vw, 70px);
-            height: clamp(50px, 10vw, 70px);
-            background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
             border: none;
-            border-radius: 50%;
+            border-radius: 10px;
+            font-weight: 700;
             cursor: pointer;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: clamp(1.3rem, 4vw, 1.8rem);
-            box-shadow: 0 4px 30px rgba(255, 215, 0, 0.4);
-            transition: all 0.3s ease;
+            transition: background 0.3s ease;
         }
 
-        .replay-btn:hover, .replay-btn:focus {
-            transform: scale(1.1);
-            box-shadow: 0 6px 40px rgba(255, 215, 0, 0.6);
+        .music-settings button:hover {
+            background: #388E3C;
         }
 
-        /* Car animation */
-        .car-animation {
+        /* ===== FINISH SCREEN ===== */
+        .finish-screen {
             position: fixed;
-            bottom: calc(var(--safe-bottom) + 120px);
-            left: -150px;
-            font-size: clamp(2.5rem, 8vw, 4rem);
-            z-index: 100;
-            opacity: 0;
-            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
-        }
-
-        .car-animation.animate {
-            animation: carDrive 5s ease-in-out forwards;
-        }
-
-        @keyframes carDrive {
-            0% { left: -150px; opacity: 0; transform: translateY(0) rotate(0deg); }
-            10% { opacity: 1; }
-            20% { transform: translateY(-8px) rotate(-2deg); }
-            40% { transform: translateY(8px) rotate(2deg); }
-            60% { transform: translateY(-5px) rotate(-1deg); }
-            80% { transform: translateY(5px) rotate(1deg); }
-            90% { opacity: 1; }
-            100% { left: calc(100% + 150px); opacity: 0; transform: translateY(0) rotate(0deg); }
-        }
-
-        /* Header */
-        .header {
-            text-align: center;
-            padding: clamp(40px, 8vh, 80px) clamp(15px, 4vw, 30px) clamp(30px, 5vh, 50px);
-            position: relative;
-            z-index: 1;
-            opacity: 0;
-            transform: translateY(-50px);
-        }
-
-        .header.animate {
-            animation: dropIn 1s ease forwards;
-        }
-
-        @keyframes dropIn {
-            0% { opacity: 0; transform: translateY(-50px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        .header h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: var(--heading-size);
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange), var(--accent-red));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: clamp(10px, 2vw, 20px);
-            line-height: 1.2;
-        }
-
-        .header.animate h1 {
-            animation: titleGlow 3s ease-in-out infinite;
-        }
-
-        @keyframes titleGlow {
-            0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.3)); }
-            50% { filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.6)); }
-        }
-
-        .header .subtitle {
-            font-size: clamp(0.8rem, 2vw, 1.2rem);
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 300;
-            letter-spacing: clamp(2px, 0.5vw, 4px);
-            opacity: 0;
-        }
-
-        .header.animate .subtitle {
-            animation: fadeIn 1s ease 0.5s forwards;
-        }
-
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-
-        /* Route line */
-        .route-line {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: clamp(8px, 2vw, 20px);
-            margin-top: clamp(20px, 4vh, 40px);
-            flex-wrap: wrap;
-            padding: 0 clamp(10px, 3vw, 30px);
-        }
-
-        .route-city {
-            opacity: 0;
-            transform: scale(0);
-        }
-
-        .route-city.animate {
-            animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-        }
-
-        @keyframes popIn {
-            0% { opacity: 0; transform: scale(0); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        .route-city span {
-            font-size: clamp(0.7rem, 2vw, 1rem);
-            font-weight: 500;
-            color: var(--accent-gold);
-            text-transform: uppercase;
-            letter-spacing: clamp(1px, 0.3vw, 2px);
-        }
-
-        .route-arrow {
-            color: rgba(255, 255, 255, 0.4);
-            font-size: clamp(1rem, 2.5vw, 1.5rem);
-            opacity: 0;
-        }
-
-        .route-arrow.animate {
-            animation: arrowSlide 0.3s ease forwards;
-        }
-
-        @keyframes arrowSlide {
-            0% { opacity: 0; transform: translateX(-20px); }
-            100% { opacity: 1; transform: translateX(0); }
-        }
-
-        /* Main container */
-        .container {
-            max-width: min(1200px, 95vw);
-            margin: 0 auto;
-            padding: clamp(20px, 4vw, 50px) clamp(10px, 3vw, 25px);
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Timeline */
-        .timeline {
-            position: relative;
-            padding-left: clamp(40px, 8vw, 60px);
-        }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: clamp(15px, 3vw, 25px);
-            top: 0;
-            height: 0;
-            width: clamp(2px, 0.4vw, 4px);
-            background: linear-gradient(to bottom, var(--accent-gold), var(--accent-orange), var(--accent-red), #e94560, var(--accent-gold));
-            border-radius: 3px;
-            transition: height 4s ease;
-        }
-
-        .timeline.animate::before {
-            height: 100%;
-        }
-
-        /* Stop card */
-        .stop {
-            position: relative;
-            margin-bottom: clamp(40px, 8vh, 80px);
-            opacity: 0;
-            transform: translateX(-50px);
-        }
-
-        .stop.animate {
-            animation: slideInLeft 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-
-        @keyframes slideInLeft {
-            0% { opacity: 0; transform: translateX(-50px); }
-            100% { opacity: 1; transform: translateX(0); }
-        }
-
-        .stop-marker {
-            position: absolute;
-            left: clamp(-35px, -6vw, -45px);
-            top: clamp(15px, 3vw, 25px);
-            width: clamp(36px, 7vw, 50px);
-            height: clamp(36px, 7vw, 50px);
-            background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: clamp(0.9rem, 2vw, 1.2rem);
-            color: var(--bg-primary);
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-            z-index: 2;
-            transform: scale(0);
-        }
-
-        .stop.animate .stop-marker {
-            animation: markerPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.3s forwards;
-        }
-
-        @keyframes markerPop {
-            0% { transform: scale(0); }
-            100% { transform: scale(1); }
-        }
-
-        .stop.animate .stop-marker::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: rgba(255, 215, 0, 0.3);
-            animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
-
-        @keyframes ping {
-            75%, 100% { transform: scale(2); opacity: 0; }
-        }
-
-        .stop-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: clamp(16px, 3vw, 28px);
-            padding: var(--card-padding);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.4s ease;
-        }
-
-        .stop-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            border-color: rgba(255, 215, 0, 0.3);
-        }
-
-        /* Slideshow in card */
-        .card-slideshow {
-            width: 100%;
-            height: clamp(150px, 25vw, 250px);
-            border-radius: clamp(12px, 2vw, 20px);
-            overflow: hidden;
-            margin-bottom: clamp(15px, 3vw, 25px);
-            position: relative;
-        }
-
-        .card-slide {
-            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-size: cover;
-            background-position: center;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            z-index: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             opacity: 0;
+            pointer-events: none;
             transition: opacity 1s ease;
         }
 
-        .card-slide.active {
+        .finish-screen.visible {
             opacity: 1;
+            pointer-events: auto;
         }
 
-        .card-slide-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: clamp(10px, 2vw, 20px);
-            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        .finish-icon {
+            font-size: 6rem;
+            margin-bottom: 20px;
+            animation: celebrate 1s ease infinite;
         }
 
-        .card-slide-text {
-            color: white;
-            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        @keyframes celebrate {
+            0%, 100% { transform: rotate(-10deg) scale(1); }
+            50% { transform: rotate(10deg) scale(1.1); }
         }
 
-        .stop-header {
-            display: flex;
-            align-items: center;
-            gap: clamp(12px, 3vw, 25px);
-            margin-bottom: clamp(15px, 3vw, 30px);
-        }
-
-        .stop-icon {
-            width: clamp(45px, 10vw, 70px);
-            height: clamp(45px, 10vw, 70px);
-            border-radius: clamp(12px, 2vw, 18px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: clamp(1.5rem, 4vw, 2.5rem);
-            transform: rotate(-10deg) scale(0);
-            flex-shrink: 0;
-        }
-
-        .stop.animate .stop-icon {
-            animation: iconSpin 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.5s forwards;
-        }
-
-        @keyframes iconSpin {
-            0% { transform: rotate(-180deg) scale(0); }
-            100% { transform: rotate(0deg) scale(1); }
-        }
-
-        .stop:nth-child(1) .stop-icon { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
-        .stop:nth-child(2) .stop-icon { background: linear-gradient(135deg, #f093fb, #f5576c); }
-        .stop:nth-child(3) .stop-icon { background: linear-gradient(135deg, #4facfe, #00f2fe); }
-        .stop:nth-child(4) .stop-icon { background: linear-gradient(135deg, #fa709a, #fee140); }
-
-        .stop-title {
-            font-family: 'Playfair Display', serif;
-            font-size: var(--subheading-size);
-            font-weight: 600;
-            color: #fff;
-            opacity: 0;
-            line-height: 1.2;
-        }
-
-        .stop.animate .stop-title {
-            animation: fadeSlideUp 0.5s ease 0.6s forwards;
-        }
-
-        @keyframes fadeSlideUp {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        .stop-subtitle {
-            font-size: clamp(0.7rem, 1.8vw, 0.95rem);
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: clamp(3px, 0.5vw, 6px);
-            opacity: 0;
-        }
-
-        .stop.animate .stop-subtitle {
-            animation: fadeIn 0.5s ease 0.7s forwards;
-        }
-
-        /* Places grid */
-        .places-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
-            gap: var(--gap);
-        }
-
-        .place-item {
-            display: flex;
-            align-items: center;
-            gap: clamp(8px, 2vw, 15px);
-            padding: clamp(12px, 2.5vw, 18px);
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: clamp(10px, 2vw, 14px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-            opacity: 0;
-            transform: translateY(20px);
-            cursor: pointer;
-        }
-
-        .place-item:hover, .place-item:focus {
-            background: rgba(255, 215, 0, 0.1);
-            border-color: rgba(255, 215, 0, 0.2);
-            transform: translateX(5px) !important;
-        }
-
-        .stop.animate .place-item {
-            animation: placeReveal 0.4s ease forwards;
-        }
-
-        @keyframes placeReveal {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        .place-icon {
-            width: clamp(32px, 6vw, 42px);
-            height: clamp(32px, 6vw, 42px);
-            border-radius: clamp(8px, 1.5vw, 12px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: clamp(0.9rem, 2vw, 1.2rem);
-            flex-shrink: 0;
-        }
-
-        .place-item:nth-child(odd) .place-icon { background: rgba(255, 215, 0, 0.2); }
-        .place-item:nth-child(even) .place-icon { background: rgba(255, 107, 107, 0.2); }
-
-        .place-name {
-            font-size: clamp(0.8rem, 2vw, 1rem);
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        /* Special sections */
-        .special-section {
-            margin-top: clamp(15px, 3vw, 30px);
-            padding: clamp(12px, 2.5vw, 22px);
-            background: rgba(255, 215, 0, 0.05);
-            border-radius: clamp(12px, 2vw, 18px);
-            border: 1px dashed rgba(255, 215, 0, 0.3);
-            opacity: 0;
-            transform: scale(0.95);
-        }
-
-        .stop.animate .special-section {
-            animation: sectionFade 0.5s ease forwards;
-        }
-
-        @keyframes sectionFade {
-            0% { opacity: 0; transform: scale(0.95); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        .special-section h4 {
-            font-size: clamp(0.85rem, 2vw, 1.05rem);
-            color: var(--accent-gold);
-            margin-bottom: clamp(10px, 2vw, 18px);
-            display: flex;
-            align-items: center;
-            gap: clamp(6px, 1.5vw, 12px);
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: clamp(40px, 8vh, 80px) clamp(15px, 4vw, 30px);
-            position: relative;
-            z-index: 1;
-            opacity: 0;
-        }
-
-        .footer.animate {
-            animation: fadeIn 1s ease forwards;
-        }
-
-        .footer-content {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: clamp(18px, 3vw, 28px);
-            padding: clamp(25px, 5vw, 50px);
-            max-width: min(600px, 90vw);
-            margin: 0 auto;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .footer h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(1.3rem, 4vw, 2rem);
-            color: var(--accent-gold);
-            margin-bottom: clamp(10px, 2vw, 18px);
-        }
-
-        .footer p {
-            color: rgba(255, 255, 255, 0.6);
-            line-height: 1.8;
-            font-size: clamp(0.85rem, 2vw, 1rem);
-        }
-
-        .travel-stats {
-            display: flex;
-            justify-content: center;
-            gap: clamp(25px, 6vw, 50px);
-            margin-top: clamp(20px, 4vw, 35px);
-            flex-wrap: wrap;
-        }
-
-        .stat {
-            text-align: center;
-            opacity: 0;
-            transform: translateY(30px);
-        }
-
-        .footer.animate .stat {
-            animation: statPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-        }
-
-        @keyframes statPop {
-            0% { opacity: 0; transform: translateY(30px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        .stat-value {
+        .finish-title {
+            font-family: 'Fredoka One', cursive;
             font-size: clamp(2rem, 6vw, 3rem);
-            font-weight: 700;
-            color: var(--accent-gold);
+            color: white;
+            margin-bottom: 10px;
         }
 
-        .stat-label {
-            font-size: clamp(0.7rem, 1.8vw, 0.9rem);
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: clamp(1px, 0.3vw, 2px);
+        .finish-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 30px;
         }
 
-        /* Confetti */
-        .confetti {
-            position: fixed;
-            top: -20px;
-            z-index: 999;
-            pointer-events: none;
+        .finish-stats {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 40px;
         }
 
-        .confetti.animate {
-            animation: confettiFall 3s ease-out forwards;
+        .finish-stat {
+            text-align: center;
+            color: white;
         }
 
-        @keyframes confettiFall {
-            0% { top: -20px; opacity: 1; transform: rotate(0deg); }
-            100% { top: 100vh; opacity: 0; transform: rotate(720deg); }
+        .finish-stat-value {
+            font-family: 'Fredoka One', cursive;
+            font-size: 3rem;
         }
 
-        /* TV / Large screen specific */
-        @media (min-width: 1920px) {
-            :root {
-                --base-size: 20px;
-            }
-            
-            .container {
-                max-width: 1600px;
-            }
+        .finish-stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
         }
 
-        @media (min-width: 2560px) {
-            :root {
-                --base-size: 24px;
-            }
-            
-            .container {
-                max-width: 2000px;
-            }
+        .restart-btn {
+            background: white;
+            color: #2E7D32;
+            border: none;
+            padding: 15px 40px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.3rem;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
         }
 
-        /* Tablet landscape */
-        @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
-            .places-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
+        .restart-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        /* Mobile landscape */
-        @media (max-height: 500px) and (orientation: landscape) {
-            .header {
-                padding: 20px 15px 15px;
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .marker-pin {
+                width: 30px;
+                height: 38px;
             }
-            
-            .header h1 {
-                font-size: 1.8rem;
+
+            .marker-label {
+                font-size: 0.65rem;
+                padding: 3px 8px;
             }
-            
-            .stop {
-                margin-bottom: 30px;
+
+            .car-body {
+                width: 60px;
+                height: 35px;
             }
-            
-            .card-slideshow {
+
+            .car-top {
+                width: 38px;
+                height: 18px;
+                left: 11px;
+            }
+
+            .car-bottom {
+                width: 60px;
+                height: 16px;
+            }
+
+            .wheel {
+                width: 14px;
+                height: 14px;
+            }
+
+            .wheel-front { left: 8px; }
+            .wheel-back { right: 8px; }
+
+            .location-popup {
+                width: 90vw;
+                max-width: 350px;
+            }
+
+            .popup-image {
                 height: 120px;
             }
-        }
 
-        /* Small mobile */
-        @media (max-width: 380px) {
-            .route-line {
-                gap: 5px;
+            .continue-btn {
+                width: 60px;
+                height: 60px;
             }
-            
-            .route-city span {
-                font-size: 0.65rem;
-            }
-            
-            .timeline {
-                padding-left: 35px;
-            }
-            
-            .stop-marker {
-                left: -30px;
-                width: 32px;
-                height: 32px;
-            }
-        }
 
-        /* Reduced motion preference */
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-
-        /* High contrast mode */
-        @media (prefers-contrast: high) {
-            .stop-card {
-                border-width: 2px;
-                border-color: rgba(255, 255, 255, 0.3);
-            }
-            
-            .place-item {
-                border-width: 2px;
-            }
-        }
-
-        /* Focus styles for accessibility */
-        *:focus-visible {
-            outline: 3px solid var(--accent-gold);
-            outline-offset: 3px;
-        }
-
-        /* Print styles */
-        @media print {
-            .audio-control, .replay-btn, .car-animation, .particles, .progress-bar, .loading-screen, .audio-status {
-                display: none !important;
-            }
-            
-            body {
-                background: white;
-                color: black;
-            }
-            
-            .stop-card {
-                background: #f5f5f5;
-                border: 1px solid #ddd;
+            .sun, .moon {
+                width: 60px;
+                height: 60px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div class="loading-screen" id="loadingScreen">
-        <div class="loading-logo">🗺️</div>
-        <div class="loading-text">Yolculuk Hazırlanıyor...</div>
-        <div class="loading-bar">
-            <div class="loading-progress" id="loadingProgress"></div>
+    <!-- Audio Element -->
+    <audio id="bgMusic" loop></audio>
+
+    <!-- Intro Screen -->
+    <div class="intro-screen" id="introScreen">
+        <div class="intro-title">🗺️ Anadolu Gezi Rotası</div>
+        <div class="intro-subtitle">Harita Üzerinde Keşif Yolculuğu</div>
+        <div class="intro-route">
+            <span class="intro-city">🏠 Uşak</span>
+            <span class="intro-arrow">→</span>
+            <span class="intro-city">🕌 Konya</span>
+            <span class="intro-arrow">→</span>
+            <span class="intro-city">🎈 Kapadokya</span>
+            <span class="intro-arrow">→</span>
+            <span class="intro-city">🏛️ Ankara</span>
+            <span class="intro-arrow">→</span>
+            <span class="intro-city">🏠 Uşak</span>
+        </div>
+        <button class="start-btn" id="startBtn">🚗 Yolculuğa Başla!</button>
+    </div>
+
+    <!-- Main Game Container -->
+    <div class="game-container" id="gameContainer">
+        <!-- Celestial Objects -->
+        <div class="sun celestial" id="sun"></div>
+        <div class="moon celestial" id="moon"></div>
+        
+        <!-- Stars -->
+        <div class="stars" id="stars"></div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-label" id="progressLabel">Yolculuk Başlıyor...</div>
+        </div>
+
+        <!-- Audio Control -->
+        <button class="audio-control" id="audioControl">🔊</button>
+
+        <!-- Music Settings -->
+        <div class="music-settings" id="musicSettings">
+            <label>🎵 Müzik URL'si</label>
+            <input type="text" id="musicUrl" placeholder="MP3 URL girin...">
+            <button id="applyMusic">Uygula</button>
+        </div>
+
+        <!-- Map Container -->
+        <div class="map-container" id="mapContainer">
+            <div class="turkey-map">
+                <!-- Land -->
+                <div class="land"></div>
+
+                <!-- Road will be dynamically created -->
+                <div class="road" id="road"></div>
+
+                <!-- City Markers -->
+                <div class="city-marker" id="marker-usak" style="left: 12%; bottom: 35%;">
+                    <div class="marker-pin"><span class="marker-icon">🏠</span></div>
+                    <span class="marker-label">Uşak</span>
+                </div>
+
+                <div class="city-marker" id="marker-konya" style="left: 38%; bottom: 32%;">
+                    <div class="marker-pin"><span class="marker-icon">🕌</span></div>
+                    <span class="marker-label">Konya</span>
+                </div>
+
+                <div class="city-marker" id="marker-kapadokya" style="left: 55%; bottom: 38%;">
+                    <div class="marker-pin"><span class="marker-icon">🎈</span></div>
+                    <span class="marker-label">Kapadokya</span>
+                </div>
+
+                <div class="city-marker" id="marker-ankara" style="left: 45%; bottom: 50%;">
+                    <div class="marker-pin"><span class="marker-icon">🏛️</span></div>
+                    <span class="marker-label">Ankara</span>
+                </div>
+
+                <!-- Car -->
+                <div class="car" id="car">
+                    <div class="car-body">
+                        <div class="car-top"></div>
+                        <div class="car-bottom"></div>
+                        <div class="wheel wheel-front"></div>
+                        <div class="wheel wheel-back"></div>
+                    </div>
+                    <div class="exhaust">
+                        <div class="smoke"></div>
+                        <div class="smoke"></div>
+                        <div class="smoke"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup Overlay -->
+        <div class="popup-overlay" id="popupOverlay"></div>
+
+        <!-- Location Popup -->
+        <div class="location-popup" id="locationPopup">
+            <div class="popup-image" id="popupImage">
+                <div class="popup-image-placeholder" id="popupImagePlaceholder">🏛️</div>
+            </div>
+            <span class="popup-badge" id="popupBadge">Durak 1</span>
+            <div class="popup-content">
+                <h3 class="popup-title" id="popupTitle">Konya</h3>
+                <p class="popup-subtitle" id="popupSubtitle">Mevlana'nın Şehri</p>
+                <p class="popup-description" id="popupDescription">
+                    Selçuklu İmparatorluğu'nun başkenti olan Konya, 
+                    Mevlana Celaleddin Rumi'nin yaşadığı ve öğretilerini yaydığı şehirdir.
+                </p>
+                <div class="popup-places" id="popupPlaces"></div>
+            </div>
+        </div>
+
+        <!-- Continue Button -->
+        <span class="continue-text" id="continueText">Devam Et</span>
+        <button class="continue-btn" id="continueBtn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+    </div>
+
+    <!-- Sleep Overlay -->
+    <div class="sleep-overlay" id="sleepOverlay">
+        <div class="sleep-icon">🛏️</div>
+        <div class="sleep-text">İyi Geceler!</div>
+        <div class="sleep-zzz"><span>Z</span><span>z</span><span>z</span></div>
+    </div>
+
+    <!-- Breakfast Overlay -->
+    <div class="breakfast-overlay" id="breakfastOverlay">
+        <div class="breakfast-icon">☀️</div>
+        <div class="breakfast-text">Günaydın! Kahvaltı Zamanı</div>
+        <div class="breakfast-items" id="breakfastItems">
+            <span>🥐</span>
+            <span>🧀</span>
+            <span>🍳</span>
+            <span>🫖</span>
+            <span>🥒</span>
         </div>
     </div>
 
-    <!-- Audio Control -->
-    <button class="audio-control" id="audioControl" aria-label="Ses Kontrolü">🔊</button>
-
-    <!-- Audio Status Indicator -->
-    <div class="audio-status" id="audioStatus">
-        <div class="equalizer">
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
+    <!-- Finish Screen -->
+    <div class="finish-screen" id="finishScreen">
+        <div class="finish-icon">🎉</div>
+        <div class="finish-title">Yolculuk Tamamlandı!</div>
+        <div class="finish-subtitle">Eve hoş geldiniz!</div>
+        <div class="finish-stats">
+            <div class="finish-stat">
+                <div class="finish-stat-value">4</div>
+                <div class="finish-stat-label">Şehir</div>
+            </div>
+            <div class="finish-stat">
+                <div class="finish-stat-value">40+</div>
+                <div class="finish-stat-label">Mekan</div>
+            </div>
+            <div class="finish-stat">
+                <div class="finish-stat-value">∞</div>
+                <div class="finish-stat-label">Anı</div>
+            </div>
         </div>
-        <span id="audioStatusText">Müzik çalıyor...</span>
+        <button class="restart-btn" id="restartBtn">🔄 Tekrar Başla</button>
     </div>
-
-    <!-- Slideshow Background -->
-    <div class="slideshow-bg" id="slideshowBg">
-        <div class="slide active" id="bgSlide1"></div>
-        <div class="slide" id="bgSlide2"></div>
-        <div class="slide" id="bgSlide3"></div>
-        <div class="slide-overlay"></div>
-    </div>
-
-    <!-- Location Indicator -->
-    <div class="location-indicator" id="locationIndicator">
-        <span class="icon">📍</span>
-        <span class="text" id="locationText">Yolculuk Başlıyor...</span>
-    </div>
-
-    <!-- Progress bar -->
-    <div class="progress-bar" id="progressBar"></div>
-
-    <!-- Particles background -->
-    <div class="particles" id="particles"></div>
-
-    <!-- Car animation -->
-    <div class="car-animation" id="car">🚗</div>
-
-    <!-- Replay button -->
-    <button class="replay-btn" id="replayBtn" title="Tekrar Oynat" aria-label="Animasyonu Tekrar Oynat">🔄</button>
-
-    <!-- Header -->
-    <header class="header" id="header">
-        <h1>🗺️ Anadolu Gezi Rotası</h1>
-        <p class="subtitle">TARİH • KÜLTÜR • DOĞA • KEŞİF</p>
-        <div class="route-line" id="routeLine">
-            <div class="route-city" data-delay="0"><span>Uşak</span></div>
-            <span class="route-arrow" data-delay="1">→</span>
-            <div class="route-city" data-delay="2"><span>Konya</span></div>
-            <span class="route-arrow" data-delay="3">→</span>
-            <div class="route-city" data-delay="4"><span>Kapadokya</span></div>
-            <span class="route-arrow" data-delay="5">→</span>
-            <div class="route-city" data-delay="6"><span>Ankara</span></div>
-            <span class="route-arrow" data-delay="7">→</span>
-            <div class="route-city" data-delay="8"><span>🏠</span></div>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="container">
-        <div class="timeline" id="timeline">
-            
-            <!-- Durak 1: Konya -->
-            <div class="stop" id="stop1" data-location="Konya" data-music="mevlevi">
-                <div class="stop-marker">1</div>
-                <div class="stop-card">
-                    <div class="card-slideshow" id="slideshow1">
-                        <div class="card-slide active" style="background: linear-gradient(45deg, #4ecdc4, #44a08d);">
-                            <div class="card-slide-overlay">
-                                <div class="card-slide-text">📸 Mevlana Müzesi - Yeşil Kubbe</div>
-                            </div>
-                        </div>
-                        <div class="card-slide" style="background: linear-gradient(45deg, #667eea, #764ba2);">
-                            <div class="card-slide-overlay">
-                                <div class="card-slide-text">🌸 Japon Kyoto Parkı</div>
-                            </div>
-                        </div>
-                        <div class="card-slide" style="background: linear-gradient(45deg, #f093fb, #f5576c);">
-                            <div class="card-slide-overlay">
-                                <div class="card-slide-text">🦋 Kelebekler Vadisi</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stop-header">
-                        <div class="stop-icon">🕌</div>
-                        <div>
-                            <h2 class="stop-title">Konya</h2>
-                            <p class="stop-subtitle">Mevlana'nın Şehri • Selçuklu Başkenti</p>
-                        </div>
-                    </div>
-                    <div class="places-grid">
-                        <div class="place-item" style="--delay: 0"><div class="place-icon">🌸</div><span class="place-name">Japon Kyoto Parkı</span></div>
-                        <div class="place-item" style="--delay: 1"><div class="place-icon">🏨</div><span class="place-name">Otel Yerleşme</span></div>
-                        <div class="place-item" style="--delay: 2"><div class="place-icon">🕌</div><span class="place-name">Mevlana Müzesi</span></div>
-                        <div class="place-item" style="--delay: 3"><div class="place-icon">🖼️</div><span class="place-name">Panorama Konya Müzesi</span></div>
-                        <div class="place-item" style="--delay: 4"><div class="place-icon">🏛️</div><span class="place-name">Konya Arkeoloji Müzesi</span></div>
-                        <div class="place-item" style="--delay: 5"><div class="place-icon">⛰️</div><span class="place-name">Alaaddin Tepesi Parkı</span></div>
-                        <div class="place-item" style="--delay: 6"><div class="place-icon">📚</div><span class="place-name">Karatay Medresesi</span></div>
-                        <div class="place-item" style="--delay: 7"><div class="place-icon">🎢</div><span class="place-name">80 Binde Devr-i Alem Parkı</span></div>
-                        <div class="place-item" style="--delay: 8"><div class="place-icon">🦋</div><span class="place-name">Kelebekler Vadisi</span></div>
-                        <div class="place-item" style="--delay: 9"><div class="place-icon">🌙</div><span class="place-name">Otele Dönüş</span></div>
-                    </div>
-                    <div class="special-section" style="--delay: 10">
-                        <h4>☀️ Ertesi Sabah</h4>
-                        <p style="color: rgba(255,255,255,0.7);">Otel kahvaltısı sonrası Nevşehir / Kapadokya yolculuğu</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Durak 2: Kapadokya -->
-            <div class="stop" id="stop2" data-location="Kapadokya" data-music="kapadokya">
-                <div class="stop-marker">2</div>
-                <div class="stop-card">
-                    <div class="card-slideshow" id="slideshow2">
-                        <div class="card-slide active" style="background: linear-gradient(45deg, #f093fb, #f5576c);">
-                            <div class="card-slide-overlay">
-                                <div class="card-slide-text">🎈 Kapadokya Balonları</div>
-                            </div>
-                        </div>
-                        <div class="card-slide" style="background: linear-gradient(45deg, #fa709a, #fee140);">
-                            <div class="card-slide-overlay">
-                                <div class="card-slide-text">🍄 Peri Bacaları</div>
-                            </div>
-                        </div>
-                        <div class="card-slide" style="background: linear-gradient(45deg, #a8edea, #fed6e3);">
-                            <div class="card-slide-overlay">
-                                <div class="card-slide-text">⛪ Göreme Açık Hava Müzesi</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stop-header">
-                        <div class="stop-icon">🎈</div>
-                        <div>
-                            <h2 class="stop-title">Nevşehir / Kapadokya</h2>
-                            <p class="stop-subtitle">Peri Bacaları • UNESCO Dünya Mirası</p>
-                        </div>
-                    </div>
-                    <div class="places-grid">
-                        <div class="place-item" style="--delay: 0"><div class="place-icon">🕊️</div><span class="place-name">Güvercinlik Vadisi</span></div>
-                        <div class="place-item" style="--delay: 1"><div class="place-icon">👸</div><span class="place-name">Üç Güzeller</span></div>
-                        <div class="place-item" style="--delay: 2"><div class="place-icon">⛪</div><span class="place-name">Göreme Açık Hava Müzesi</span></div>
-                        <div class="place-item" style="--delay: 3"><div class="place-icon">📸</div><span class="place-name">Göreme Panorama View</span></div>
-                        <div class="place-item" style="--delay: 4"><div class="place-icon">🌅</div><span class="place-name">Gün Batımı/Doğumu Seyir Noktası</span></div>
-                        <div class="place-item" style="--delay: 5"><div class="place-icon">🏜️</div><span class="place-name">Kızılçukur Vadisi</span></div>
-                        <div class="place-item" style="--delay: 6"><div class="place-icon">🍄</div><span class="place-name">Paşabağları Müze ve Örenyeri</span></div>
-                        <div class="place-item" style="--delay: 7"><div class="place-icon">🏨</div><span class="place-name">Otel Yerleşme</span></div>
-                    </div>
-                    <div class="special-section" style="--delay: 8">
-                        <h4>🚗 Ankara Yolu Üzerinde Uğranacak Yerler</h4>
-                        <div class="places-grid" style="margin-top: 15px;">
-                            <div class="place-item" style="--delay: 9"><div class="place-icon">🔮</div><span class="place-name">İlginç Arkeolojik Desenler</span></div>
-                            <div class="place-item" style="--delay: 10"><div class="place-icon">🗿</div><span class="place-name">Sculpture Park</span></div>
-                            <div class="place-item" style="--delay: 11"><div class="place-icon">🪨</div><span class="place-name">Dikilitaşlar Avanos</span></div>
-                            <div class="place-item" style="--delay: 12"><div class="place-icon">🏰</div><span class="place-name">Açık Saray Müzesi</span></div>
-                            <div class="place-item" style="--delay: 13"><div class="place-icon">🚀</div><span class="place-name">Türksat Lagari Müzesi</span></div>
-                            <div class="place-item" style="--delay: 14"><div class="place-icon">🦇</div><span class="place-name">Tulumtaş Mağarası</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Durak 3: Ankara -->
-            <div class="stop" id="stop3" data-location="Ankara" data-music="ankara">
-                <div class="stop-marker">3</div>
-                <div class="stop-card">
-                    <div class="card-slideshow" id="slideshow3">
-                        <div class="card-slide active" style="background: linear-gradient(45deg, #4facfe, #00f2fe);">
-                            <div class="card-slide-overlay">
-                                <div class="card-slide-text">🇹🇷 Anıtkabir</div>
-                            </div>
-                        </div>
-                        <div class="card-slide" style="background: linear-gradient(45deg, #43e97b, #38f9d7);">
-                            <div class="card-slide-overlay">
-                                <div class="card-slide-text">📚 Millet Kütüphanesi</div>
-                            </div>
-                        </div>
-                        <div class="card-slide" style="background: linear-gradient(45deg, #fa709a, #fee140);">
-                            <div class="card-slide-overlay">
-                                <div class="card-slide-text">🏘️ Hamamönü</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stop-header">
-                        <div class="stop-icon">🏛️</div>
-                        <div>
-                            <h2 class="stop-title">Ankara</h2>
-                            <p class="stop-subtitle">Başkent • Cumhuriyet'in Kalbi</p>
-                        </div>
-                    </div>
-                    <div class="places-grid">
-                        <div class="place-item" style="--delay: 0"><div class="place-icon">🏨</div><span class="place-name">Otel Yerleşme</span></div>
-                        <div class="place-item" style="--delay: 1"><div class="place-icon">🦖</div><span class="place-name">Şehit Cuma Dağ Tabiat Tarihi Müzesi</span></div>
-                        <div class="place-item" style="--delay: 2"><div class="place-icon">🇹🇷</div><span class="place-name">Anıtkabir</span></div>
-                        <div class="place-item" style="--delay: 3"><div class="place-icon">🎨</div><span class="place-name">Cermodern</span></div>
-                        <div class="place-item" style="--delay: 4"><div class="place-icon">⛓️</div><span class="place-name">Ulucanlar Cezaevi Müzesi</span></div>
-                        <div class="place-item" style="--delay: 5"><div class="place-icon">✈️</div><span class="place-name">Türk Hava Kuvvetleri Müzesi</span></div>
-                        <div class="place-item" style="--delay: 6"><div class="place-icon">🌿</div><span class="place-name">Biyosfer Müze</span></div>
-                        <div class="place-item" style="--delay: 7"><div class="place-icon">📚</div><span class="place-name">Millet Kütüphanesi</span></div>
-                        <div class="place-item" style="--delay: 8"><div class="place-icon">⚙️</div><span class="place-name">MKEK Sanayi Müzesi</span></div>
-                        <div class="place-item" style="--delay: 9"><div class="place-icon">🏘️</div><span class="place-name">Hamamönü Tarihi Evleri</span></div>
-                        <div class="place-item" style="--delay: 10"><div class="place-icon">🕯️</div><span class="place-name">15 Temmuz Şehitler Anıtı</span></div>
-                        <div class="place-item" style="--delay: 11"><div class="place-icon">🌙</div><span class="place-name">Otele Dönüş</span></div>
-                    </div>
-                    <div class="special-section" style="--delay: 12">
-                        <h4>☀️ Ertesi Sabah</h4>
-                        <p style="color: rgba(255,255,255,0.7);">Otel kahvaltısı sonrası Uşak yolculuğu</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Durak 4: Uşak Dönüş -->
-            <div class="stop" id="stop4" data-location="Uşak" data-music="journey">
-                <div class="stop-marker">4</div>
-                <div class="stop-card">
-                    <div class="card-slideshow" id="slideshow4">
-                        <div class="card-slide active" style="background: linear-gradient(45deg, #fa709a, #fee140);">
-                            <div class="card-slide-overlay">
-                                <div class="card-slide-text">🏠 Eve Dönüş Yolculuğu</div>
-                            </div>
-                        </div>
-                        <div class="card-slide" style="background: linear-gradient(45deg, #a8edea, #fed6e3);">
-                            <div class="card-slide-overlay">
-                                <div class="card-slide-text">☕ Yol Molası</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stop-header">
-                        <div class="stop-icon">🏠</div>
-                        <div>
-                            <h2 class="stop-title">Uşak Dönüş Yolculuğu</h2>
-                            <p class="stop-subtitle">Eve Dönüş • Son Duraklar</p>
-                        </div>
-                    </div>
-                    <div class="places-grid">
-                        <div class="place-item" style="--delay: 0"><div class="place-icon">🛩️</div><span class="place-name">MSÖ Air Space Müzesi</span></div>
-                        <div class="place-item" style="--delay: 1"><div class="place-icon">🏔️</div><span class="place-name">Kırkinler Kaya Yerleşimleri</span></div>
-                        <div class="place-item" style="--delay: 2"><div class="place-icon">🏙️</div><span class="place-name">Afyonkarahisar (Opsiyonel)</span></div>
-                        <div class="place-item" style="--delay: 3"><div class="place-icon">☕</div><span class="place-name">Dinlenme Tesisi Molası</span></div>
-                        <div class="place-item" style="--delay: 4"><div class="place-icon">🏠</div><span class="place-name">Eve Varış 🎉</span></div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="footer" id="footer">
-        <div class="footer-content">
-            <h3>✨ Harika Bir Yolculuk!</h3>
-            <p>Türkiye'nin en güzel köşelerini keşfetmeye hazır mısınız?</p>
-            <div class="travel-stats">
-                <div class="stat" style="--delay: 0">
-                    <div class="stat-value" data-target="4">0</div>
-                    <div class="stat-label">Şehir</div>
-                </div>
-                <div class="stat" style="--delay: 1">
-                    <div class="stat-value" data-target="40">0</div>
-                    <div class="stat-label">Durak</div>
-                </div>
-                <div class="stat" style="--delay: 2">
-                    <div class="stat-value">∞</div>
-                    <div class="stat-label">Anı</div>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Audio Elements - Ayrı kanallar için -->
-    <audio id="bgMusic" loop preload="auto"></audio>
-    <audio id="sfxChannel" preload="auto"></audio>
 
     <script>
-        // ===== GELİŞMİŞ SES YÖNETİM SİSTEMİ =====
-        class AudioManager {
-            constructor() {
-                this.bgMusic = document.getElementById('bgMusic');
-                this.sfxChannel = document.getElementById('sfxChannel');
-                this.audioStatus = document.getElementById('audioStatus');
-                this.audioStatusText = document.getElementById('audioStatusText');
-                
-                this.isMuted = false;
-                this.currentTrack = null;
-                this.isTransitioning = false;
-                this.sfxQueue = [];
-                this.isPlayingSfx = false;
-                
-                // Ses seviyeleri
-                this.volumes = {
-                    music: 0.25,      // Arka plan müziği
-                    sfx: 0.4,         // Efekt sesleri
-                    car: 0.35,        // Araba sesi
-                    transition: 0.3   // Geçiş sesi
-                };
-                
-                // Fade süreleri (ms)
-                this.fadeDuration = {
-                    in: 2000,   // Fade in süresi
-                    out: 1500,  // Fade out süresi
-                    cross: 2500 // Crossfade süresi
-                };
-                
-                // Müzik URL'leri (senin eklediğin linkler)
-                this.musicUrls = {
-                    mevlevi: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/andean-flute-theme-low_fyBeqSNu_NWM.mp3',
-                    kapadokya: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/HxKQM0zSDkf8xwatf/audioblocks-christmas-magic-fun-holiday-mood-30-1_rGC_5oFuh_NWM.mp3',
-                    ankara: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/noisy-street-car-passing-through-narrow-street_GJz6tBVu_NWM.mp3',
-                    journey: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/street-walking-looping_MkMwDHVd_NWM.mp3',
-                    intro: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/audioblocks-new-notification-message-alert-4_rYHGnfMLAw8_NWM.mp3'
-                };
-                
-                // Efekt sesleri URL'leri
-                this.sfxUrls = {
-                    car: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/road-car-driveby_z1GQ2SVu_NWM.mp3',
-                    transition: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/audioblocks-high-technology-slide-9-next-page-slide-swish-next-page-slide-swish_BtU-nbfU0wU_NWM.mp3',
-                    success: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/audioblocks-mission-request-successfully-complete_HZ1GkuuQYwU_NWM.mp3'
-                };
-                
-                // Lokasyon başına müzik isimleri
-                this.musicNames = {
-                    mevlevi: '🎵 Ney & Flüt Melodisi',
-                    kapadokya: '🎵 Büyülü Atmosfer',
-                    ankara: '🎵 Şehir Sesleri',
-                    journey: '🎵 Yolculuk Ritmi',
-                    intro: '🎵 Hoş Geldiniz'
-                };
-                
-                // Event listeners
-                this.bgMusic.addEventListener('ended', () => this.onMusicEnded());
-                this.sfxChannel.addEventListener('ended', () => this.onSfxEnded());
-            }
-
-            // Ses durumunu göster
-            showAudioStatus(text, duration = 3000) {
-                if (this.isMuted) return;
-                
-                this.audioStatusText.textContent = text;
-                this.audioStatus.classList.add('show');
-                
-                clearTimeout(this.statusTimeout);
-                this.statusTimeout = setTimeout(() => {
-                    this.audioStatus.classList.remove('show');
-                }, duration);
-            }
-
-            // Yumuşak fade in
-            async fadeIn(audio, targetVolume, duration = this.fadeDuration.in) {
-                return new Promise(resolve => {
-                    audio.volume = 0;
-                    const steps = 50;
-                    const stepDuration = duration / steps;
-                    const volumeStep = targetVolume / steps;
-                    let currentStep = 0;
-                    
-                    const fade = setInterval(() => {
-                        currentStep++;
-                        const newVolume = Math.min(volumeStep * currentStep, targetVolume);
-                        audio.volume = newVolume;
-                        
-                        if (currentStep >= steps) {
-                            audio.volume = targetVolume;
-                            clearInterval(fade);
-                            resolve();
-                        }
-                    }, stepDuration);
-                });
-            }
-
-            // Yumuşak fade out
-            async fadeOut(audio, duration = this.fadeDuration.out) {
-                return new Promise(resolve => {
-                    if (!audio || audio.paused) {
-                        resolve();
-                        return;
-                    }
-                    
-                    const startVolume = audio.volume;
-                    const steps = 40;
-                    const stepDuration = duration / steps;
-                    const volumeStep = startVolume / steps;
-                    let currentStep = 0;
-                    
-                    const fade = setInterval(() => {
-                        currentStep++;
-                        const newVolume = Math.max(startVolume - (volumeStep * currentStep), 0);
-                        audio.volume = newVolume;
-                        
-                        if (currentStep >= steps || audio.volume <= 0) {
-                            audio.volume = 0;
-                            audio.pause();
-                            clearInterval(fade);
-                            resolve();
-                        }
-                    }, stepDuration);
-                });
-            }
-
-            // Arka plan müziği çal
-            async playBackgroundMusic(type) {
-                if (this.isMuted || this.isTransitioning) return;
-                if (this.currentTrack === type) return; // Aynı parça zaten çalıyorsa
-                
-                this.isTransitioning = true;
-                
-                try {
-                    // Önce mevcut müziği fade out yap
-                    if (!this.bgMusic.paused) {
-                        await this.fadeOut(this.bgMusic);
-                    }
-                    
-                    // Yeni müziği yükle
-                    const url = this.musicUrls[type] || this.musicUrls.intro;
-                    this.bgMusic.src = url;
-                    this.bgMusic.load();
-                    
-                    // Çalmayı başlat
-                    await this.bgMusic.play();
-                    
-                    // Fade in yap
-                    await this.fadeIn(this.bgMusic, this.volumes.music);
-                    
-                    this.currentTrack = type;
-                    
-                    // Durum göster
-                    const musicName = this.musicNames[type] || '🎵 Müzik';
-                    this.showAudioStatus(musicName);
-                    
-                } catch (e) {
-                    console.log('Müzik çalma hatası:', e);
+        // ===== GEZİ ROTA VERİLERİ =====
+        const journeyData = {
+            cities: {
+                usak: {
+                    id: 'usak',
+                    name: 'Uşak',
+                    subtitle: 'Yolculuğun Başlangıcı',
+                    icon: '🏠',
+                    position: { left: 12, bottom: 35 },
+                    description: 'Batı Anadolu\'nun incisi Uşak, halıcılık ve dokumacılık ile ünlü tarihi bir şehirdir.',
+                    color: '#FF9800'
+                },
+                konya: {
+                    id: 'konya',
+                    name: 'Konya',
+                    subtitle: 'Mevlana\'nın Şehri • Selçuklu Başkenti',
+                    icon: '🕌',
+                    position: { left: 38, bottom: 32 },
+                    description: 'Selçuklu İmparatorluğu\'nun başkenti olan Konya, Mevlana Celaleddin Rumi\'nin yaşadığı ve öğretilerini yaydığı şehirdir. Hoşgörü ve sevgi kenti olarak bilinir.',
+                    color: '#4CAF50'
+                },
+                kapadokya: {
+                    id: 'kapadokya',
+                    name: 'Kapadokya',
+                    subtitle: 'Peri Bacaları • UNESCO Dünya Mirası',
+                    icon: '🎈',
+                    position: { left: 55, bottom: 38 },
+                    description: 'Dünyaca ünlü peri bacaları, yeraltı şehirleri ve sıcak hava balonları ile büyüleyici bir doğa harikası.',
+                    color: '#E91E63'
+                },
+                ankara: {
+                    id: 'ankara',
+                    name: 'Ankara',
+                    subtitle: 'Başkent • Cumhuriyet\'in Kalbi',
+                    icon: '🏛️',
+                    position: { left: 45, bottom: 50 },
+                    description: 'Türkiye Cumhuriyeti\'nin başkenti. Anıtkabir, müzeler ve modern yaşamın buluştuğu şehir.',
+                    color: '#2196F3'
                 }
+            },
+            
+            steps: [
+                // UŞAK ÇIKIŞ
+                { type: 'departure', city: 'usak', message: 'Yolculuk Uşak\'tan başlıyor!' },
                 
-                this.isTransitioning = false;
-            }
-
-            // Müzik değiştir (crossfade ile)
-            async changeMusic(newType) {
-                if (this.isMuted) return;
-                if (this.currentTrack === newType) return;
-                if (this.isTransitioning) {
-                    // Geçiş sırasındaysa kuyruğa ekle
-                    setTimeout(() => this.changeMusic(newType), 500);
-                    return;
-                }
+                // KONYA
+                { type: 'travel', from: 'usak', to: 'konya' },
+                { type: 'arrival', city: 'konya', places: ['Japon Kyoto Parkı', 'Otel Yerleşme'] },
+                { type: 'activity', city: 'konya', places: ['Mevlana Müzesi', 'Panorama Konya Müzesi', 'Konya Arkeoloji Müzesi'] },
+                { type: 'activity', city: 'konya', places: ['Alaaddin Tepesi Parkı', 'Karatay Medresesi'] },
+                { type: 'activity', city: 'konya', places: ['80 Binde Devr-i Alem Parkı', 'Kelebekler Vadisi'] },
+                { type: 'sleep', city: 'konya', message: 'Konya\'da geceleme' },
+                { type: 'breakfast', city: 'konya' },
                 
-                await this.playBackgroundMusic(newType);
-            }
-
-            // Efekt sesi çal (kuyruk sistemi ile)
-            async playSfx(type, waitForComplete = false) {
-                if (this.isMuted) return;
+                // KAPADOKYA
+                { type: 'travel', from: 'konya', to: 'kapadokya' },
+                { type: 'arrival', city: 'kapadokya', places: ['Güvercinlik Vadisi', 'Üç Güzeller'] },
+                { type: 'activity', city: 'kapadokya', places: ['Göreme Açık Hava Müzesi', 'Göreme Panorama View'] },
+                { type: 'activity', city: 'kapadokya', places: ['Gün Batımı Seyir Noktası', 'Kızılçukur Vadisi'] },
+                { type: 'activity', city: 'kapadokya', places: ['Paşabağları Müze ve Örenyeri'] },
+                { type: 'sleep', city: 'kapadokya', message: 'Kapadokya\'da geceleme' },
+                { type: 'breakfast', city: 'kapadokya' },
+                { type: 'activity', city: 'kapadokya', places: ['İlginç Arkeolojik Desenler', 'Sculpture Park', 'Dikilitaşlar Avanos'] },
+                { type: 'activity', city: 'kapadokya', places: ['Açık Saray Müzesi', 'Türksat Lagari Müzesi', 'Tulumtaş Mağarası'] },
                 
-                // Kuyruğa ekle
-                this.sfxQueue.push({ type, waitForComplete });
+                // ANKARA
+                { type: 'travel', from: 'kapadokya', to: 'ankara' },
+                { type: 'arrival', city: 'ankara', places: ['Otel Yerleşme'] },
+                { type: 'activity', city: 'ankara', places: ['Şehit Cuma Dağ Tabiat Tarihi Müzesi', 'Anıtkabir'] },
+                { type: 'activity', city: 'ankara', places: ['Cermodern', 'Ulucanlar Cezaevi Müzesi'] },
+                { type: 'activity', city: 'ankara', places: ['Türk Hava Kuvvetleri Müzesi', 'Biyosfer Müze'] },
+                { type: 'activity', city: 'ankara', places: ['Millet Kütüphanesi', 'MKEK Sanayi ve Teknoloji Müzesi'] },
+                { type: 'activity', city: 'ankara', places: ['Hamamönü Tarihi Ankara Evleri', '15 Temmuz Şehitler Anıtı'] },
+                { type: 'sleep', city: 'ankara', message: 'Ankara\'da geceleme' },
+                { type: 'breakfast', city: 'ankara' },
                 
-                // Kuyruk işleme başlat
-                if (!this.isPlayingSfx) {
-                    this.processSfxQueue();
-                }
-            }
+                // UŞAK DÖNÜŞ
+                { type: 'travel', from: 'ankara', to: 'usak', waypoints: ['MSÖ Air Space Müzesi', 'Kırkinler Kaya Yerleşimleri'] },
+                { type: 'activity', city: 'usak', places: ['Afyonkarahisar Merkezi (Opsiyonel)', 'Dinlenme Tesisi Molası'] },
+                { type: 'finish', city: 'usak', message: 'Eve Hoş Geldiniz! 🎉' }
+            ]
+        };
 
-            // SFX kuyruğunu işle
-            async processSfxQueue() {
-                if (this.sfxQueue.length === 0) {
-                    this.isPlayingSfx = false;
-                    return;
-                }
-                
-                this.isPlayingSfx = true;
-                const sfx = this.sfxQueue.shift();
-                
-                try {
-                    const url = this.sfxUrls[sfx.type];
-                    if (!url) {
-                        this.processSfxQueue();
-                        return;
-                    }
-                    
-                    // Arka plan müziğini biraz kıs
-                    if (!this.bgMusic.paused && sfx.type === 'car') {
-                        this.bgMusic.volume = this.volumes.music * 0.4;
-                    }
-                    
-                    this.sfxChannel.src = url;
-                    this.sfxChannel.volume = this.volumes[sfx.type] || this.volumes.sfx;
-                    await this.sfxChannel.play();
-                    
-                    if (sfx.waitForComplete) {
-                        // Sesin bitmesini bekle
-                        await new Promise(resolve => {
-                            this.sfxChannel.onended = resolve;
-                        });
-                    } else {
-                        // Kısa bir gecikme ile devam et
-                        await new Promise(r => setTimeout(r, 300));
-                    }
-                    
-                } catch (e) {
-                    console.log('SFX çalma hatası:', e);
-                }
-                
-                // Kuyruktaki sonraki ses
-                this.processSfxQueue();
-            }
+        // ===== UYGULAMA STATE =====
+        let state = {
+            currentStep: 0,
+            isPlaying: false,
+            isMuted: true,
+            musicUrl: '',
+            visitedCities: new Set()
+        };
 
-            // SFX bittiğinde
-            onSfxEnded() {
-                // Arka plan müziğini normale döndür
-                if (!this.bgMusic.paused && !this.isMuted) {
-                    this.fadeIn(this.bgMusic, this.volumes.music, 500);
-                }
-            }
+        // ===== DOM ELEMENTS =====
+        const elements = {
+            introScreen: document.getElementById('introScreen'),
+            startBtn: document.getElementById('startBtn'),
+            gameContainer: document.getElementById('gameContainer'),
+            car: document.getElementById('car'),
+            sun: document.getElementById('sun'),
+            moon: document.getElementById('moon'),
+            stars: document.getElementById('stars'),
+            popupOverlay: document.getElementById('popupOverlay'),
+            locationPopup: document.getElementById('locationPopup'),
+            popupImage: document.getElementById('popupImage'),
+            popupImagePlaceholder: document.getElementById('popupImagePlaceholder'),
+            popupBadge: document.getElementById('popupBadge'),
+            popupTitle: document.getElementById('popupTitle'),
+            popupSubtitle: document.getElementById('popupSubtitle'),
+            popupDescription: document.getElementById('popupDescription'),
+            popupPlaces: document.getElementById('popupPlaces'),
+            continueBtn: document.getElementById('continueBtn'),
+            continueText: document.getElementById('continueText'),
+            progressFill: document.getElementById('progressFill'),
+            progressLabel: document.getElementById('progressLabel'),
+            sleepOverlay: document.getElementById('sleepOverlay'),
+            breakfastOverlay: document.getElementById('breakfastOverlay'),
+            breakfastItems: document.getElementById('breakfastItems'),
+            finishScreen: document.getElementById('finishScreen'),
+            restartBtn: document.getElementById('restartBtn'),
+            audioControl: document.getElementById('audioControl'),
+            musicSettings: document.getElementById('musicSettings'),
+            musicUrl: document.getElementById('musicUrl'),
+            applyMusic: document.getElementById('applyMusic'),
+            bgMusic: document.getElementById('bgMusic')
+        };
 
-            // Müzik bittiğinde (loop olduğu için normalde çalışmaz)
-            onMusicEnded() {
-                // Loop açık olduğu için bu normalde çağrılmaz
-            }
-
-            // Araba sesi çal
-            async playCarSound() {
-                await this.playSfx('car', false);
-            }
-
-            // Geçiş sesi çal
-            async playTransitionSound() {
-                await this.playSfx('transition', false);
-            }
-
-            // Başarı sesi çal
-            async playSuccessSound() {
-                await this.playSfx('success', false);
-            }
-
-            // Sesi aç/kapat
-            toggleMute() {
-                this.isMuted = !this.isMuted;
-                
-                if (this.isMuted) {
-                    // Tüm sesleri durdur
-                    this.fadeOut(this.bgMusic, 500);
-                    this.sfxChannel.pause();
-                    this.sfxQueue = [];
-                    this.audioStatus.classList.remove('show');
-                } else {
-                    // Müziği tekrar başlat
-                    if (this.currentTrack) {
-                        this.playBackgroundMusic(this.currentTrack);
-                    }
-                }
-                
-                return this.isMuted;
-            }
-
-            // Tüm sesleri durdur
-            async stopAll() {
-                this.sfxQueue = [];
-                this.isPlayingSfx = false;
-                
-                await Promise.all([
-                    this.fadeOut(this.bgMusic, 500),
-                    this.fadeOut(this.sfxChannel, 300)
-                ]);
-                
-                this.currentTrack = null;
-                this.audioStatus.classList.remove('show');
-            }
-
-            // Ses seviyesini ayarla
-            setMusicVolume(volume) {
-                this.volumes.music = Math.max(0, Math.min(1, volume));
-                if (!this.bgMusic.paused) {
-                    this.bgMusic.volume = this.volumes.music;
-                }
-            }
-        }
-
-        // ===== SLIDESHOW SYSTEM =====
-        class SlideshowManager {
-            constructor() {
-                this.slideshows = {};
-                this.intervals = {};
-            }
-
-            init(containerId) {
-                const container = document.getElementById(containerId);
-                if (!container) return;
-                
-                const slides = container.querySelectorAll('.card-slide');
-                this.slideshows[containerId] = {
-                    slides: slides,
-                    currentIndex: 0
-                };
-            }
-
-            start(containerId, intervalTime = 3500) {
-                if (!this.slideshows[containerId]) this.init(containerId);
-                
-                const data = this.slideshows[containerId];
-                if (!data || data.slides.length <= 1) return;
-                
-                // Önceki interval'i temizle
-                this.stop(containerId);
-                
-                this.intervals[containerId] = setInterval(() => {
-                    data.slides[data.currentIndex].classList.remove('active');
-                    data.currentIndex = (data.currentIndex + 1) % data.slides.length;
-                    data.slides[data.currentIndex].classList.add('active');
-                }, intervalTime);
-            }
-
-            stop(containerId) {
-                if (this.intervals[containerId]) {
-                    clearInterval(this.intervals[containerId]);
-                    delete this.intervals[containerId];
-                }
-            }
-
-            stopAll() {
-                Object.keys(this.intervals).forEach(id => this.stop(id));
-            }
-
-            reset(containerId) {
-                const data = this.slideshows[containerId];
-                if (data) {
-                    data.slides.forEach(s => s.classList.remove('active'));
-                    data.currentIndex = 0;
-                    if (data.slides[0]) data.slides[0].classList.add('active');
-                }
-            }
-        }
-
-        // ===== BACKGROUND SLIDESHOW =====
-        class BackgroundSlideshow {
-            constructor() {
-                this.slides = document.querySelectorAll('.slideshow-bg .slide');
-                this.currentIndex = 0;
-                this.interval = null;
-                
-                this.backgrounds = {
-                    intro: [
-                        'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-                        'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)'
-                    ],
-                    konya: [
-                        'linear-gradient(135deg, #134e5e 0%, #71b280 100%)',
-                        'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)',
-                        'linear-gradient(135deg, #2c3e50 0%, #3498db 100%)'
-                    ],
-                    kapadokya: [
-                        'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                        'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'
-                    ],
-                    ankara: [
-                        'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                        'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                    ],
-                    usak: [
-                        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                        'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'
-                    ]
-                };
-                
-                this.currentLocation = 'intro';
-            }
-
-            setLocation(location) {
-                this.currentLocation = location.toLowerCase();
-                this.updateSlides();
-            }
-
-            updateSlides() {
-                const bgs = this.backgrounds[this.currentLocation] || this.backgrounds.intro;
-                this.slides.forEach((slide, index) => {
-                    if (bgs[index]) {
-                        slide.style.background = bgs[index];
-                    }
-                });
-            }
-
-            start() {
-                this.stop();
-                this.interval = setInterval(() => {
-                    this.slides[this.currentIndex].classList.remove('active');
-                    this.currentIndex = (this.currentIndex + 1) % this.slides.length;
-                    this.slides[this.currentIndex].classList.add('active');
-                }, 6000);
-            }
-
-            stop() {
-                if (this.interval) {
-                    clearInterval(this.interval);
-                    this.interval = null;
-                }
-            }
-
-            reset() {
-                this.stop();
-                this.currentLocation = 'intro';
-                this.currentIndex = 0;
-                this.slides.forEach((s, i) => {
-                    s.classList.toggle('active', i === 0);
-                });
-                this.updateSlides();
-            }
-        }
-
-        // ===== LOCATION INDICATOR =====
-        class LocationIndicator {
-            constructor() {
-                this.element = document.getElementById('locationIndicator');
-                this.textElement = document.getElementById('locationText');
-            }
-
-            show(location) {
-                this.textElement.textContent = location;
-                this.element.classList.add('show');
-            }
-
-            hide() {
-                this.element.classList.remove('show');
-            }
-
-            update(location) {
-                this.textElement.textContent = location;
-            }
-        }
-
-        // ===== MAIN ANIMATION CONTROLLER =====
-        class AnimationController {
-            constructor() {
-                this.audioManager = new AudioManager();
-                this.slideshowManager = new SlideshowManager();
-                this.bgSlideshow = new BackgroundSlideshow();
-                this.locationIndicator = new LocationIndicator();
-                
-                this.steps = [];
-                this.currentStep = 0;
-                this.isPlaying = false;
-                this.progressBar = document.getElementById('progressBar');
-            }
-
-            addStep(callback, delay) {
-                this.steps.push({ callback, delay });
-            }
-
-            async play() {
-                this.isPlaying = true;
-                this.currentStep = 0;
-                
-                // Arka plan slideshow'u başlat
-                this.bgSlideshow.start();
-                
-                // Intro müziği başlat
-                await this.audioManager.playBackgroundMusic('intro');
-                
-                for (let i = 0; i < this.steps.length; i++) {
-                    if (!this.isPlaying) break;
-                    
-                    await new Promise(resolve => setTimeout(resolve, this.steps[i].delay));
-                    this.steps[i].callback();
-                    
-                    const progress = ((i + 1) / this.steps.length) * 100;
-                    this.progressBar.style.width = progress + '%';
-                }
-            }
-
-            async reset() {
-                this.isPlaying = false;
-                this.currentStep = 0;
-                this.progressBar.style.width = '0%';
-                
-                // Tüm ses ve slideshow'ları durdur
-                await this.audioManager.stopAll();
-                this.slideshowManager.stopAll();
-                this.bgSlideshow.reset();
-                this.locationIndicator.hide();
-                
-                // Animate class'larını temizle
-                document.querySelectorAll('.animate').forEach(el => {
-                    el.classList.remove('animate');
-                });
-                
-                // İstatistikleri sıfırla
-                document.querySelectorAll('.stat-value[data-target]').forEach(el => {
-                    el.textContent = '0';
-                });
-                
-                // Slideshow'ları sıfırla
-                ['slideshow1', 'slideshow2', 'slideshow3', 'slideshow4'].forEach(id => {
-                    this.slideshowManager.reset(id);
-                });
-            }
-        }
-
-        // ===== INITIALIZATION =====
-        const controller = new AnimationController();
-
-        // Parçacıklar oluştur
-        const particlesContainer = document.getElementById('particles');
-        for (let i = 0; i < 40; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.animationDelay = Math.random() * 15 + 's';
-            particle.style.animationDuration = (15 + Math.random() * 10) + 's';
-            particlesContainer.appendChild(particle);
-        }
-
-        // Animasyon dizisi oluştur
-        function setupAnimations() {
-            controller.steps = [];
-
-            // Header animasyonu
-            controller.addStep(() => {
-                document.getElementById('header').classList.add('animate');
-                controller.locationIndicator.show('🚀 Yolculuk Başlıyor...');
-            }, 500);
-
-            // Araba animasyonu (intro sırasında)
-            controller.addStep(() => {
-                const car = document.getElementById('car');
-                car.classList.add('animate');
-                controller.audioManager.playCarSound();
-            }, 1000);
-
-            // Rota şehirleri tek tek görünsün
-            const routeItems = document.querySelectorAll('#routeLine .route-city, #routeLine .route-arrow');
-            routeItems.forEach((item, index) => {
-                controller.addStep(() => {
-                    item.classList.add('animate');
-                    // Her 3 öğede bir geçiş sesi çal
-                    if (index % 3 === 0) {
-                        controller.audioManager.playTransitionSound();
-                    }
-                }, 250);
-            });
-
-            // Timeline çizgisi uzasın
-            controller.addStep(() => {
-                document.getElementById('timeline').classList.add('animate');
-            }, 800);
-
-            // DURAK 1 - KONYA
-            controller.addStep(() => {
-                const stop = document.getElementById('stop1');
-                stop.classList.add('animate');
-                animatePlaceItems(stop);
-                
-                controller.locationIndicator.update('📍 Konya - Mevlana\'nın Şehri');
-                controller.bgSlideshow.setLocation('konya');
-                controller.audioManager.changeMusic('mevlevi');
-                controller.slideshowManager.start('slideshow1');
-            }, 1200);
-
-            // Konya'dan Kapadokya'ya geçiş
-            controller.addStep(() => {
-                controller.locationIndicator.update('🚗 Kapadokya\'ya Yolculuk...');
-                
-                // Araba animasyonunu resetle ve tekrar oynat
-                const car = document.getElementById('car');
-                car.classList.remove('animate');
-                void car.offsetWidth;
-                car.classList.add('animate');
-                controller.audioManager.playCarSound();
-            }, 4000);
-
-            // DURAK 2 - KAPADOKYA
-            controller.addStep(() => {
-                const stop = document.getElementById('stop2');
-                stop.classList.add('animate');
-                animatePlaceItems(stop);
-                
-                controller.locationIndicator.update('📍 Kapadokya - Peri Bacaları');
-                controller.bgSlideshow.setLocation('kapadokya');
-                controller.audioManager.changeMusic('kapadokya');
-                controller.slideshowManager.start('slideshow2');
-            }, 2000);
-
-            // Kapadokya'dan Ankara'ya geçiş
-            controller.addStep(() => {
-                controller.locationIndicator.update('🚗 Ankara\'ya Yolculuk...');
-                
-                const car = document.getElementById('car');
-                car.classList.remove('animate');
-                void car.offsetWidth;
-                car.classList.add('animate');
-                controller.audioManager.playCarSound();
-            }, 5000);
-
-            // DURAK 3 - ANKARA
-            controller.addStep(() => {
-                const stop = document.getElementById('stop3');
-                stop.classList.add('animate');
-                animatePlaceItems(stop);
-                
-                controller.locationIndicator.update('📍 Ankara - Başkent');
-                controller.bgSlideshow.setLocation('ankara');
-                controller.audioManager.changeMusic('ankara');
-                controller.slideshowManager.start('slideshow3');
-            }, 2000);
-
-            // Ankara'dan Uşak'a geçiş
-            controller.addStep(() => {
-                controller.locationIndicator.update('🚗 Eve Dönüş Yolculuğu...');
-                
-                const car = document.getElementById('car');
-                car.classList.remove('animate');
-                void car.offsetWidth;
-                car.classList.add('animate');
-                controller.audioManager.playCarSound();
-            }, 5000);
-
-            // DURAK 4 - UŞAK (EVE DÖNÜŞ)
-            controller.addStep(() => {
-                const stop = document.getElementById('stop4');
-                stop.classList.add('animate');
-                animatePlaceItems(stop);
-                
-                controller.locationIndicator.update('📍 Uşak - Eve Varış');
-                controller.bgSlideshow.setLocation('usak');
-                controller.audioManager.changeMusic('journey');
-                controller.slideshowManager.start('slideshow4');
-            }, 2000);
-
-            // FOOTER - Yolculuk tamamlandı
-            controller.addStep(() => {
-                const footer = document.getElementById('footer');
-                footer.classList.add('animate');
-                
-                controller.locationIndicator.update('🎉 Yolculuk Tamamlandı!');
-                controller.audioManager.playSuccessSound();
-                
-                const stats = footer.querySelectorAll('.stat');
-                stats.forEach((stat, index) => {
-                    setTimeout(() => {
-                        stat.style.animation = `statPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards`;
-                    }, index * 300);
-                });
-
-                setTimeout(() => animateCountUp(), 600);
-                setTimeout(() => createConfetti(), 1000);
-            }, 3500);
-
-            // Lokasyon göstergesini gizle
-            controller.addStep(() => {
-                setTimeout(() => {
-                    controller.locationIndicator.hide();
-                }, 4000);
-            }, 2000);
-        }
-
-        function animatePlaceItems(stop) {
-            const items = stop.querySelectorAll('.place-item');
-            items.forEach((item, index) => {
-                setTimeout(() => {
-                    item.style.animation = `placeReveal 0.4s ease forwards`;
-                }, index * 100);
-            });
-
-            const special = stop.querySelector('.special-section');
-            if (special) {
-                setTimeout(() => {
-                    special.style.animation = `sectionFade 0.5s ease forwards`;
-                }, items.length * 100 + 300);
-            }
-        }
-
-        function animateCountUp() {
-            document.querySelectorAll('.stat-value[data-target]').forEach(el => {
-                const target = parseInt(el.dataset.target);
-                let current = 0;
-                const increment = target / 25;
-                const timer = setInterval(() => {
-                    current += increment;
-                    if (current >= target) {
-                        el.textContent = target + '+';
-                        clearInterval(timer);
-                    } else {
-                        el.textContent = Math.floor(current);
-                    }
-                }, 60);
-            });
-        }
-
-        function createConfetti() {
-            const colors = ['#ffd700', '#ff8c00', '#ff6347', '#4ecdc4', '#f093fb', '#4facfe'];
+        // ===== YILDIZLARI OLUŞTUR =====
+        function createStars() {
+            const starsContainer = elements.stars;
             for (let i = 0; i < 50; i++) {
-                const confetti = document.createElement('div');
-                confetti.className = 'confetti';
-                confetti.style.left = Math.random() * 100 + '%';
-                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.animationDelay = Math.random() * 0.8 + 's';
-                confetti.style.width = (Math.random() * 10 + 5) + 'px';
-                confetti.style.height = (Math.random() * 10 + 5) + 'px';
-                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
-                document.body.appendChild(confetti);
-                
-                setTimeout(() => confetti.classList.add('animate'), 10);
-                setTimeout(() => confetti.remove(), 4000);
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                starsContainer.appendChild(star);
             }
         }
 
-        // ===== LOADING SCREEN =====
-        async function initializeApp() {
-            const loadingScreen = document.getElementById('loadingScreen');
-            const loadingProgress = document.getElementById('loadingProgress');
+        // ===== GÜNDÜZ/GECE GEÇİŞLERİ =====
+        function setTimeOfDay(time) {
+            document.body.classList.remove('sunset', 'night', 'sunrise');
+            elements.sun.classList.remove('setting', 'hidden', 'rising');
+            elements.moon.classList.remove('visible', 'hidden');
+            elements.stars.classList.remove('visible');
+
+            switch(time) {
+                case 'day':
+                    // Default state
+                    break;
+                case 'sunset':
+                    document.body.classList.add('sunset');
+                    elements.sun.classList.add('setting');
+                    break;
+                case 'night':
+                    document.body.classList.add('night');
+                    elements.sun.classList.add('hidden');
+                    elements.moon.classList.add('visible');
+                    elements.stars.classList.add('visible');
+                    break;
+                case 'sunrise':
+                    document.body.classList.add('sunrise');
+                    elements.sun.classList.add('rising');
+                    elements.moon.classList.add('hidden');
+                    break;
+            }
+        }
+
+        // ===== ARABA POZİSYONU =====
+        function setCarPosition(cityId) {
+            const city = journeyData.cities[cityId];
+            if (!city) return;
             
-            // Yükleme simülasyonu
-            for (let i = 0; i <= 100; i += 4) {
-                loadingProgress.style.width = i + '%';
-                await new Promise(r => setTimeout(r, 40));
+            elements.car.style.left = (city.position.left - 5) + '%';
+            elements.car.style.bottom = (city.position.bottom - 8) + '%';
+        }
+
+        // ===== ARABA HAREKET ETTİR =====
+        async function moveCar(fromCity, toCity) {
+            const from = journeyData.cities[fromCity];
+            const to = journeyData.cities[toCity];
+            
+            elements.car.classList.add('driving');
+            
+            // Hedef pozisyon
+            elements.car.style.left = (to.position.left - 5) + '%';
+            elements.car.style.bottom = (to.position.bottom - 8) + '%';
+            
+            // Animasyon süresince bekle
+            await sleep(3000);
+            
+            elements.car.classList.remove('driving');
+            
+            // Şehri ziyaret edildi olarak işaretle
+            state.visitedCities.add(toCity);
+            updateCityMarkers();
+        }
+
+        // ===== ŞEHİR MARKER'LARINI GÜNCELLE =====
+        function updateCityMarkers() {
+            Object.keys(journeyData.cities).forEach(cityId => {
+                const marker = document.getElementById('marker-' + cityId);
+                if (marker) {
+                    marker.classList.toggle('visited', state.visitedCities.has(cityId));
+                }
+            });
+        }
+
+        // ===== POPUP GÖSTER =====
+        function showPopup(cityId, places = [], customTitle = null, customDesc = null) {
+            const city = journeyData.cities[cityId];
+            if (!city) return;
+            
+            // Popup içeriğini doldur
+            elements.popupImagePlaceholder.textContent = city.icon;
+            elements.popupImagePlaceholder.style.background = `linear-gradient(135deg, ${city.color}, ${adjustColor(city.color, -30)})`;
+            elements.popupTitle.textContent = customTitle || city.name;
+            elements.popupSubtitle.textContent = city.subtitle;
+            elements.popupDescription.textContent = customDesc || city.description;
+            
+            // Mekanları listele
+            elements.popupPlaces.innerHTML = '';
+            places.forEach(place => {
+                const tag = document.createElement('span');
+                tag.className = 'popup-place-tag';
+                tag.textContent = place;
+                elements.popupPlaces.appendChild(tag);
+            });
+            
+            // Badge güncelle
+            const stepNum = Math.floor(state.currentStep / 2) + 1;
+            elements.popupBadge.textContent = `Adım ${state.currentStep + 1}`;
+            
+            // Popup pozisyonunu ayarla (şehrin üzerinde)
+            const marker = document.getElementById('marker-' + cityId);
+            if (marker) {
+                const rect = marker.getBoundingClientRect();
+                const popup = elements.locationPopup;
+                
+                // Ekranın ortasında göster
+                popup.style.left = '50%';
+                popup.style.top = '50%';
+                popup.style.transform = 'translate(-50%, -50%) scale(1)';
             }
             
-            // Yükleme ekranını gizle
+            // Göster
+            elements.popupOverlay.classList.add('visible');
+            elements.locationPopup.classList.add('visible');
+            
+            // Devam butonunu göster
             setTimeout(() => {
-                loadingScreen.classList.add('hidden');
+                elements.continueBtn.classList.add('visible');
+                elements.continueText.classList.add('visible');
+                updateContinueText();
+            }, 500);
+        }
+
+        // ===== POPUP GİZLE =====
+        function hidePopup() {
+            elements.popupOverlay.classList.remove('visible');
+            elements.locationPopup.classList.remove('visible');
+            elements.continueBtn.classList.remove('visible');
+            elements.continueText.classList.remove('visible');
+        }
+
+        // ===== DEVAM BUTON METNİNİ GÜNCELLE =====
+        function updateContinueText() {
+            const step = journeyData.steps[state.currentStep];
+            const nextStep = journeyData.steps[state.currentStep + 1];
+            
+            if (!nextStep) {
+                elements.continueText.textContent = 'Bitir';
+            } else if (nextStep.type === 'travel') {
+                elements.continueText.textContent = 'Yola Çık';
+            } else if (nextStep.type === 'sleep') {
+                elements.continueText.textContent = 'Uyu';
+            } else {
+                elements.continueText.textContent = 'Devam Et';
+            }
+        }
+
+        // ===== UYKU ANİMASYONU =====
+        async function playSleepAnimation() {
+            // Gün batımı
+            setTimeOfDay('sunset');
+            await sleep(1500);
+            
+            // Gece
+            setTimeOfDay('night');
+            await sleep(500);
+            
+            // Uyku overlay
+            elements.sleepOverlay.classList.add('visible');
+            await sleep(3000);
+            
+            // Güneş doğuşu
+            elements.sleepOverlay.classList.remove('visible');
+            setTimeOfDay('sunrise');
+            await sleep(1500);
+            
+            // Gündüz
+            setTimeOfDay('day');
+        }
+
+        // ===== KAHVALTI ANİMASYONU =====
+        async function playBreakfastAnimation() {
+            elements.breakfastOverlay.classList.add('visible');
+            
+            // Kahvaltı öğelerini sırayla göster
+            const items = elements.breakfastItems.querySelectorAll('span');
+            items.forEach((item, index) => {
+                item.style.animationDelay = (index * 0.2) + 's';
+            });
+            
+            await sleep(3000);
+            elements.breakfastOverlay.classList.remove('visible');
+        }
+
+        // ===== İLERLEME ÇUBUĞUNU GÜNCELLE =====
+        function updateProgress() {
+            const progress = (state.currentStep / journeyData.steps.length) * 100;
+            elements.progressFill.style.width = progress + '%';
+            
+            const step = journeyData.steps[state.currentStep];
+            if (step) {
+                if (step.city) {
+                    const city = journeyData.cities[step.city];
+                    elements.progressLabel.textContent = city ? city.name : 'Yolculuk';
+                } else {
+                    elements.progressLabel.textContent = 'Yolda...';
+                }
+            }
+        }
+
+        // ===== ADIM İŞLE =====
+        async function processStep() {
+            if (state.currentStep >= journeyData.steps.length) {
+                showFinishScreen();
+                return;
+            }
+            
+            const step = journeyData.steps[state.currentStep];
+            updateProgress();
+            
+            switch(step.type) {
+                case 'departure':
+                    setCarPosition(step.city);
+                    state.visitedCities.add(step.city);
+                    updateCityMarkers();
+                    showPopup(step.city, [], 'Çıkış: ' + journeyData.cities[step.city].name, step.message);
+                    break;
+                    
+                case 'travel':
+                    hidePopup();
+                    elements.continueBtn.classList.remove('visible');
+                    elements.continueText.classList.remove('visible');
+                    await moveCar(step.from, step.to);
+                    state.currentStep++;
+                    processStep();
+                    return;
+                    
+                case 'arrival':
+                case 'activity':
+                    showPopup(step.city, step.places);
+                    break;
+                    
+                case 'sleep':
+                    hidePopup();
+                    await playSleepAnimation();
+                    state.currentStep++;
+                    processStep();
+                    return;
+                    
+                case 'breakfast':
+                    await playBreakfastAnimation();
+                    state.currentStep++;
+                    processStep();
+                    return;
+                    
+                case 'finish':
+                    hidePopup();
+                    await sleep(500);
+                    showFinishScreen();
+                    return;
+            }
+        }
+
+        // ===== BİTİŞ EKRANI =====
+        function showFinishScreen() {
+            elements.finishScreen.classList.add('visible');
+        }
+
+        // ===== YARDIMCI FONKSİYONLAR =====
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function adjustColor(color, amount) {
+            const hex = color.replace('#', '');
+            const num = parseInt(hex, 16);
+            const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+            const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
+            const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
+            return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+        }
+
+        // ===== MÜZİK KONTROLÜ =====
+        function toggleMusic() {
+            state.isMuted = !state.isMuted;
+            elements.audioControl.textContent = state.isMuted ? '🔇' : '🔊';
+            elements.audioControl.classList.toggle('muted', state.isMuted);
+            
+            if (state.isMuted) {
+                elements.bgMusic.pause();
+            } else if (state.musicUrl) {
+                elements.bgMusic.play().catch(() => {});
+            }
+        }
+
+        function applyMusicUrl() {
+            const url = elements.musicUrl.value.trim();
+            if (url) {
+                state.musicUrl = url;
+                elements.bgMusic.src = url;
+                elements.bgMusic.load();
                 
-                // Animasyonları başlat
-                setupAnimations();
-                controller.play();
-            }, 600);
+                if (!state.isMuted) {
+                    elements.bgMusic.play().catch(() => {});
+                }
+                
+                elements.musicSettings.classList.remove('visible');
+            }
+        }
+
+        // ===== OYUNU BAŞLAT =====
+        function startGame() {
+            elements.introScreen.classList.add('hidden');
+            state.currentStep = 0;
+            state.visitedCities.clear();
+            
+            // İlk pozisyon
+            setCarPosition('usak');
+            setTimeOfDay('day');
+            
+            // İlk adımı işle
+            setTimeout(() => {
+                processStep();
+            }, 1000);
+        }
+
+        // ===== OYUNU SIFIRLA =====
+        function resetGame() {
+            state.currentStep = 0;
+            state.visitedCities.clear();
+            
+            elements.finishScreen.classList.remove('visible');
+            hidePopup();
+            setTimeOfDay('day');
+            setCarPosition('usak');
+            updateCityMarkers();
+            
+            setTimeout(() => {
+                processStep();
+            }, 500);
         }
 
         // ===== EVENT LISTENERS =====
+        elements.startBtn.addEventListener('click', startGame);
         
-        // Ses kontrolü
-        document.getElementById('audioControl').addEventListener('click', () => {
-            const btn = document.getElementById('audioControl');
-            const isMuted = controller.audioManager.toggleMute();
-            btn.textContent = isMuted ? '🔇' : '🔊';
-            btn.classList.toggle('muted', isMuted);
+        elements.continueBtn.addEventListener('click', () => {
+            hidePopup();
+            state.currentStep++;
+            setTimeout(() => processStep(), 300);
         });
-
-        // Tekrar oynat butonu
-        document.getElementById('replayBtn').addEventListener('click', async () => {
-            await controller.reset();
-            document.getElementById('car').classList.remove('animate');
-            
-            setTimeout(() => {
-                setupAnimations();
-                controller.play();
-            }, 700);
+        
+        elements.restartBtn.addEventListener('click', resetGame);
+        
+        elements.audioControl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Sağ tık veya uzun basma ile ayarları aç
+            toggleMusic();
         });
-
-        // Görünürlük değişikliği (sekme gizlendiğinde)
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                controller.audioManager.bgMusic.pause();
-            } else if (!controller.audioManager.isMuted && controller.audioManager.currentTrack) {
-                controller.audioManager.bgMusic.play().catch(() => {});
+        
+        elements.audioControl.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            elements.musicSettings.classList.toggle('visible');
+        });
+        
+        // Mobil için uzun basma
+        let pressTimer;
+        elements.audioControl.addEventListener('touchstart', () => {
+            pressTimer = setTimeout(() => {
+                elements.musicSettings.classList.toggle('visible');
+            }, 500);
+        });
+        
+        elements.audioControl.addEventListener('touchend', () => {
+            clearTimeout(pressTimer);
+        });
+        
+        elements.applyMusic.addEventListener('click', applyMusicUrl);
+        
+        elements.musicUrl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') applyMusicUrl();
+        });
+        
+        // Dışarı tıklayınca ayarları kapat
+        document.addEventListener('click', (e) => {
+            if (!elements.musicSettings.contains(e.target) && e.target !== elements.audioControl) {
+                elements.musicSettings.classList.remove('visible');
             }
         });
 
-        // Uygulama başlat
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
-        } else {
-            initializeApp();
-        }
+        // ===== BAŞLANGIÇ =====
+        createStars();
+        
+        // Varsayılan müzik URL'si (boş bırakılabilir)
+        // elements.musicUrl.value = 'YOUR_MUSIC_URL_HERE';
     </script>
 </body>
 </html>
