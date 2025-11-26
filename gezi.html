@@ -59,7 +59,7 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
             min-height: 100vh;
-            min-height: 100dvh; /* Dynamic viewport height for mobile */
+            min-height: 100dvh;
             color: #fff;
             overflow-x: hidden;
             padding-top: var(--safe-top);
@@ -108,6 +108,11 @@
             animation: pulse 1.5s ease infinite;
         }
 
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
         .loading-bar {
             width: clamp(200px, 60vw, 400px);
             height: 4px;
@@ -151,6 +156,53 @@
 
         .audio-control.muted {
             opacity: 0.5;
+        }
+
+        /* Audio Status Indicator */
+        .audio-status {
+            position: fixed;
+            top: calc(var(--safe-top) + 90px);
+            right: calc(var(--safe-right) + 20px);
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--accent-gold);
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .audio-status.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .audio-status .equalizer {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 12px;
+        }
+
+        .audio-status .bar {
+            width: 3px;
+            background: var(--accent-gold);
+            animation: equalize 0.8s ease infinite;
+        }
+
+        .audio-status .bar:nth-child(1) { animation-delay: 0s; }
+        .audio-status .bar:nth-child(2) { animation-delay: 0.2s; }
+        .audio-status .bar:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes equalize {
+            0%, 100% { height: 4px; }
+            50% { height: 12px; }
         }
 
         /* Slideshow Background */
@@ -907,7 +959,7 @@
 
         /* Print styles */
         @media print {
-            .audio-control, .replay-btn, .car-animation, .particles, .progress-bar, .loading-screen {
+            .audio-control, .replay-btn, .car-animation, .particles, .progress-bar, .loading-screen, .audio-status {
                 display: none !important;
             }
             
@@ -935,6 +987,16 @@
 
     <!-- Audio Control -->
     <button class="audio-control" id="audioControl" aria-label="Ses Kontrolü">🔊</button>
+
+    <!-- Audio Status Indicator -->
+    <div class="audio-status" id="audioStatus">
+        <div class="equalizer">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        <span id="audioStatusText">Müzik çalıyor...</span>
+    </div>
 
     <!-- Slideshow Background -->
     <div class="slideshow-bg" id="slideshowBg">
@@ -1189,132 +1251,282 @@
         </div>
     </footer>
 
-    <!-- Audio Elements -->
+    <!-- Audio Elements - Ayrı kanallar için -->
     <audio id="bgMusic" loop preload="auto"></audio>
-    <audio id="carSound" preload="auto"></audio>
-    <audio id="transitionSound" preload="auto"></audio>
+    <audio id="sfxChannel" preload="auto"></audio>
 
     <script>
-        // ===== AUDIO SYSTEM =====
+        // ===== GELİŞMİŞ SES YÖNETİM SİSTEMİ =====
         class AudioManager {
             constructor() {
                 this.bgMusic = document.getElementById('bgMusic');
-                this.carSound = document.getElementById('carSound');
-                this.transitionSound = document.getElementById('transitionSound');
+                this.sfxChannel = document.getElementById('sfxChannel');
+                this.audioStatus = document.getElementById('audioStatus');
+                this.audioStatusText = document.getElementById('audioStatusText');
+                
                 this.isMuted = false;
                 this.currentTrack = null;
-                this.audioContext = null;
+                this.isTransitioning = false;
+                this.sfxQueue = [];
+                this.isPlayingSfx = false;
                 
-                // Web Audio API için context
-                this.initAudioContext();
-            }
-
-            initAudioContext() {
-                try {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                } catch (e) {
-                    console.log('Web Audio API not supported');
-                }
-            }
-
-            // Kültürel müzikler için URL'ler (ücretsiz kaynaklardan)
-            getMusicUrl(type) {
-                const musicUrls = {
-                    mevlevi: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/andean-flute-theme-low_fyBeqSNu_NWM.mp3', // Ney sesi
-                    kapadokya: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/HxKQM0zSDkf8xwatf/audioblocks-christmas-magic-fun-holiday-mood-30-1_rGC_5oFuh_NWM.mp3', // Ambient doğa
-                    ankara: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/noisy-street-car-passing-through-narrow-street_GJz6tBVu_NWM.mp3', // Şehir ambiyans
-                    journey: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/street-walking-looping_MkMwDHVd_NWM.mp3', // Yolculuk
-                    intro: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/audioblocks-new-notification-message-alert-4_rYHGnfMLAw8_NWM.mp3' // Giriş
+                // Ses seviyeleri
+                this.volumes = {
+                    music: 0.25,      // Arka plan müziği
+                    sfx: 0.4,         // Efekt sesleri
+                    car: 0.35,        // Araba sesi
+                    transition: 0.3   // Geçiş sesi
                 };
-                return musicUrls[type] || musicUrls.intro;
-            }
-
-            getSoundUrl(type) {
-                const soundUrls = {
-                    car: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/road-car-driveby_z1GQ2SVu_NWM.mp3', // Araba
-                    transition: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/audioblocks-high-technology-slide-9-next-page-slide-swish-next-page-slide-swish_BtU-nbfU0wU_NWM.mp3', // Geçiş sesi
-                    success: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/audioblocks-mission-request-successfully-complete_HZ1GkuuQYwU_NWM.mp3' // Başarı
+                
+                // Fade süreleri (ms)
+                this.fadeDuration = {
+                    in: 2000,   // Fade in süresi
+                    out: 1500,  // Fade out süresi
+                    cross: 2500 // Crossfade süresi
                 };
-                return soundUrls[type];
+                
+                // Müzik URL'leri (senin eklediğin linkler)
+                this.musicUrls = {
+                    mevlevi: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/andean-flute-theme-low_fyBeqSNu_NWM.mp3',
+                    kapadokya: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/HxKQM0zSDkf8xwatf/audioblocks-christmas-magic-fun-holiday-mood-30-1_rGC_5oFuh_NWM.mp3',
+                    ankara: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/noisy-street-car-passing-through-narrow-street_GJz6tBVu_NWM.mp3',
+                    journey: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/street-walking-looping_MkMwDHVd_NWM.mp3',
+                    intro: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/audioblocks-new-notification-message-alert-4_rYHGnfMLAw8_NWM.mp3'
+                };
+                
+                // Efekt sesleri URL'leri
+                this.sfxUrls = {
+                    car: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/road-car-driveby_z1GQ2SVu_NWM.mp3',
+                    transition: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/audioblocks-high-technology-slide-9-next-page-slide-swish-next-page-slide-swish_BtU-nbfU0wU_NWM.mp3',
+                    success: 'https://dm0qx8t0i9gc9.cloudfront.net/previews/audio/BsTwCwBHBjzwub4i4/audioblocks-mission-request-successfully-complete_HZ1GkuuQYwU_NWM.mp3'
+                };
+                
+                // Lokasyon başına müzik isimleri
+                this.musicNames = {
+                    mevlevi: '🎵 Ney & Flüt Melodisi',
+                    kapadokya: '🎵 Büyülü Atmosfer',
+                    ankara: '🎵 Şehir Sesleri',
+                    journey: '🎵 Yolculuk Ritmi',
+                    intro: '🎵 Hoş Geldiniz'
+                };
+                
+                // Event listeners
+                this.bgMusic.addEventListener('ended', () => this.onMusicEnded());
+                this.sfxChannel.addEventListener('ended', () => this.onSfxEnded());
             }
 
-            async playBackgroundMusic(type) {
+            // Ses durumunu göster
+            showAudioStatus(text, duration = 3000) {
                 if (this.isMuted) return;
                 
-                try {
-                    const url = this.getMusicUrl(type);
-                    this.bgMusic.src = url;
-                    this.bgMusic.volume = 0.3;
+                this.audioStatusText.textContent = text;
+                this.audioStatus.classList.add('show');
+                
+                clearTimeout(this.statusTimeout);
+                this.statusTimeout = setTimeout(() => {
+                    this.audioStatus.classList.remove('show');
+                }, duration);
+            }
+
+            // Yumuşak fade in
+            async fadeIn(audio, targetVolume, duration = this.fadeDuration.in) {
+                return new Promise(resolve => {
+                    audio.volume = 0;
+                    const steps = 50;
+                    const stepDuration = duration / steps;
+                    const volumeStep = targetVolume / steps;
+                    let currentStep = 0;
                     
-                    // Fade in effect
-                    this.bgMusic.volume = 0;
+                    const fade = setInterval(() => {
+                        currentStep++;
+                        const newVolume = Math.min(volumeStep * currentStep, targetVolume);
+                        audio.volume = newVolume;
+                        
+                        if (currentStep >= steps) {
+                            audio.volume = targetVolume;
+                            clearInterval(fade);
+                            resolve();
+                        }
+                    }, stepDuration);
+                });
+            }
+
+            // Yumuşak fade out
+            async fadeOut(audio, duration = this.fadeDuration.out) {
+                return new Promise(resolve => {
+                    if (!audio || audio.paused) {
+                        resolve();
+                        return;
+                    }
+                    
+                    const startVolume = audio.volume;
+                    const steps = 40;
+                    const stepDuration = duration / steps;
+                    const volumeStep = startVolume / steps;
+                    let currentStep = 0;
+                    
+                    const fade = setInterval(() => {
+                        currentStep++;
+                        const newVolume = Math.max(startVolume - (volumeStep * currentStep), 0);
+                        audio.volume = newVolume;
+                        
+                        if (currentStep >= steps || audio.volume <= 0) {
+                            audio.volume = 0;
+                            audio.pause();
+                            clearInterval(fade);
+                            resolve();
+                        }
+                    }, stepDuration);
+                });
+            }
+
+            // Arka plan müziği çal
+            async playBackgroundMusic(type) {
+                if (this.isMuted || this.isTransitioning) return;
+                if (this.currentTrack === type) return; // Aynı parça zaten çalıyorsa
+                
+                this.isTransitioning = true;
+                
+                try {
+                    // Önce mevcut müziği fade out yap
+                    if (!this.bgMusic.paused) {
+                        await this.fadeOut(this.bgMusic);
+                    }
+                    
+                    // Yeni müziği yükle
+                    const url = this.musicUrls[type] || this.musicUrls.intro;
+                    this.bgMusic.src = url;
+                    this.bgMusic.load();
+                    
+                    // Çalmayı başlat
                     await this.bgMusic.play();
                     
-                    let volume = 0;
-                    const fadeIn = setInterval(() => {
-                        volume += 0.05;
-                        if (volume >= 0.3) {
-                            this.bgMusic.volume = 0.3;
-                            clearInterval(fadeIn);
-                        } else {
-                            this.bgMusic.volume = volume;
-                        }
-                    }, 100);
+                    // Fade in yap
+                    await this.fadeIn(this.bgMusic, this.volumes.music);
                     
                     this.currentTrack = type;
+                    
+                    // Durum göster
+                    const musicName = this.musicNames[type] || '🎵 Müzik';
+                    this.showAudioStatus(musicName);
+                    
                 } catch (e) {
-                    console.log('Audio playback failed:', e);
+                    console.log('Müzik çalma hatası:', e);
+                }
+                
+                this.isTransitioning = false;
+            }
+
+            // Müzik değiştir (crossfade ile)
+            async changeMusic(newType) {
+                if (this.isMuted) return;
+                if (this.currentTrack === newType) return;
+                if (this.isTransitioning) {
+                    // Geçiş sırasındaysa kuyruğa ekle
+                    setTimeout(() => this.changeMusic(newType), 500);
+                    return;
+                }
+                
+                await this.playBackgroundMusic(newType);
+            }
+
+            // Efekt sesi çal (kuyruk sistemi ile)
+            async playSfx(type, waitForComplete = false) {
+                if (this.isMuted) return;
+                
+                // Kuyruğa ekle
+                this.sfxQueue.push({ type, waitForComplete });
+                
+                // Kuyruk işleme başlat
+                if (!this.isPlayingSfx) {
+                    this.processSfxQueue();
                 }
             }
 
-            async fadeOutAndChangeMusic(newType) {
-                if (this.isMuted || this.currentTrack === newType) return;
+            // SFX kuyruğunu işle
+            async processSfxQueue() {
+                if (this.sfxQueue.length === 0) {
+                    this.isPlayingSfx = false;
+                    return;
+                }
                 
-                // Fade out current
-                let volume = this.bgMusic.volume;
-                const fadeOut = setInterval(() => {
-                    volume -= 0.05;
-                    if (volume <= 0) {
-                        this.bgMusic.volume = 0;
-                        clearInterval(fadeOut);
-                        this.playBackgroundMusic(newType);
-                    } else {
-                        this.bgMusic.volume = volume;
+                this.isPlayingSfx = true;
+                const sfx = this.sfxQueue.shift();
+                
+                try {
+                    const url = this.sfxUrls[sfx.type];
+                    if (!url) {
+                        this.processSfxQueue();
+                        return;
                     }
-                }, 50);
+                    
+                    // Arka plan müziğini biraz kıs
+                    if (!this.bgMusic.paused && sfx.type === 'car') {
+                        this.bgMusic.volume = this.volumes.music * 0.4;
+                    }
+                    
+                    this.sfxChannel.src = url;
+                    this.sfxChannel.volume = this.volumes[sfx.type] || this.volumes.sfx;
+                    await this.sfxChannel.play();
+                    
+                    if (sfx.waitForComplete) {
+                        // Sesin bitmesini bekle
+                        await new Promise(resolve => {
+                            this.sfxChannel.onended = resolve;
+                        });
+                    } else {
+                        // Kısa bir gecikme ile devam et
+                        await new Promise(r => setTimeout(r, 300));
+                    }
+                    
+                } catch (e) {
+                    console.log('SFX çalma hatası:', e);
+                }
+                
+                // Kuyruktaki sonraki ses
+                this.processSfxQueue();
             }
 
+            // SFX bittiğinde
+            onSfxEnded() {
+                // Arka plan müziğini normale döndür
+                if (!this.bgMusic.paused && !this.isMuted) {
+                    this.fadeIn(this.bgMusic, this.volumes.music, 500);
+                }
+            }
+
+            // Müzik bittiğinde (loop olduğu için normalde çalışmaz)
+            onMusicEnded() {
+                // Loop açık olduğu için bu normalde çağrılmaz
+            }
+
+            // Araba sesi çal
             async playCarSound() {
-                if (this.isMuted) return;
-                
-                try {
-                    this.carSound.src = this.getSoundUrl('car');
-                    this.carSound.volume = 0.4;
-                    await this.carSound.play();
-                } catch (e) {
-                    console.log('Car sound failed:', e);
-                }
+                await this.playSfx('car', false);
             }
 
+            // Geçiş sesi çal
             async playTransitionSound() {
-                if (this.isMuted) return;
-                
-                try {
-                    this.transitionSound.src = this.getSoundUrl('transition');
-                    this.transitionSound.volume = 0.5;
-                    await this.transitionSound.play();
-                } catch (e) {
-                    console.log('Transition sound failed:', e);
-                }
+                await this.playSfx('transition', false);
             }
 
+            // Başarı sesi çal
+            async playSuccessSound() {
+                await this.playSfx('success', false);
+            }
+
+            // Sesi aç/kapat
             toggleMute() {
                 this.isMuted = !this.isMuted;
                 
                 if (this.isMuted) {
-                    this.bgMusic.pause();
-                    this.carSound.pause();
+                    // Tüm sesleri durdur
+                    this.fadeOut(this.bgMusic, 500);
+                    this.sfxChannel.pause();
+                    this.sfxQueue = [];
+                    this.audioStatus.classList.remove('show');
                 } else {
+                    // Müziği tekrar başlat
                     if (this.currentTrack) {
                         this.playBackgroundMusic(this.currentTrack);
                     }
@@ -1323,11 +1535,26 @@
                 return this.isMuted;
             }
 
-            stopAll() {
-                this.bgMusic.pause();
-                this.carSound.pause();
-                this.bgMusic.currentTime = 0;
-                this.carSound.currentTime = 0;
+            // Tüm sesleri durdur
+            async stopAll() {
+                this.sfxQueue = [];
+                this.isPlayingSfx = false;
+                
+                await Promise.all([
+                    this.fadeOut(this.bgMusic, 500),
+                    this.fadeOut(this.sfxChannel, 300)
+                ]);
+                
+                this.currentTrack = null;
+                this.audioStatus.classList.remove('show');
+            }
+
+            // Ses seviyesini ayarla
+            setMusicVolume(volume) {
+                this.volumes.music = Math.max(0, Math.min(1, volume));
+                if (!this.bgMusic.paused) {
+                    this.bgMusic.volume = this.volumes.music;
+                }
             }
         }
 
@@ -1349,11 +1576,14 @@
                 };
             }
 
-            start(containerId, intervalTime = 3000) {
+            start(containerId, intervalTime = 3500) {
                 if (!this.slideshows[containerId]) this.init(containerId);
                 
                 const data = this.slideshows[containerId];
                 if (!data || data.slides.length <= 1) return;
+                
+                // Önceki interval'i temizle
+                this.stop(containerId);
                 
                 this.intervals[containerId] = setInterval(() => {
                     data.slides[data.currentIndex].classList.remove('active');
@@ -1372,6 +1602,15 @@
             stopAll() {
                 Object.keys(this.intervals).forEach(id => this.stop(id));
             }
+
+            reset(containerId) {
+                const data = this.slideshows[containerId];
+                if (data) {
+                    data.slides.forEach(s => s.classList.remove('active'));
+                    data.currentIndex = 0;
+                    if (data.slides[0]) data.slides[0].classList.add('active');
+                }
+            }
         }
 
         // ===== BACKGROUND SLIDESHOW =====
@@ -1381,7 +1620,6 @@
                 this.currentIndex = 0;
                 this.interval = null;
                 
-                // Gradient backgrounds for each location
                 this.backgrounds = {
                     intro: [
                         'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
@@ -1426,11 +1664,12 @@
             }
 
             start() {
+                this.stop();
                 this.interval = setInterval(() => {
                     this.slides[this.currentIndex].classList.remove('active');
                     this.currentIndex = (this.currentIndex + 1) % this.slides.length;
                     this.slides[this.currentIndex].classList.add('active');
-                }, 5000);
+                }, 6000);
             }
 
             stop() {
@@ -1438,6 +1677,16 @@
                     clearInterval(this.interval);
                     this.interval = null;
                 }
+            }
+
+            reset() {
+                this.stop();
+                this.currentLocation = 'intro';
+                this.currentIndex = 0;
+                this.slides.forEach((s, i) => {
+                    s.classList.toggle('active', i === 0);
+                });
+                this.updateSlides();
             }
         }
 
@@ -1484,10 +1733,10 @@
                 this.isPlaying = true;
                 this.currentStep = 0;
                 
-                // Start background slideshow
+                // Arka plan slideshow'u başlat
                 this.bgSlideshow.start();
                 
-                // Start intro music
+                // Intro müziği başlat
                 await this.audioManager.playBackgroundMusic('intro');
                 
                 for (let i = 0; i < this.steps.length; i++) {
@@ -1501,25 +1750,30 @@
                 }
             }
 
-            reset() {
+            async reset() {
                 this.isPlaying = false;
                 this.currentStep = 0;
                 this.progressBar.style.width = '0%';
                 
-                // Stop all audio and slideshows
-                this.audioManager.stopAll();
+                // Tüm ses ve slideshow'ları durdur
+                await this.audioManager.stopAll();
                 this.slideshowManager.stopAll();
-                this.bgSlideshow.stop();
+                this.bgSlideshow.reset();
                 this.locationIndicator.hide();
                 
-                // Remove all animate classes
+                // Animate class'larını temizle
                 document.querySelectorAll('.animate').forEach(el => {
                     el.classList.remove('animate');
                 });
                 
-                // Reset stat values
+                // İstatistikleri sıfırla
                 document.querySelectorAll('.stat-value[data-target]').forEach(el => {
                     el.textContent = '0';
+                });
+                
+                // Slideshow'ları sıfırla
+                ['slideshow1', 'slideshow2', 'slideshow3', 'slideshow4'].forEach(id => {
+                    this.slideshowManager.reset(id);
                 });
             }
         }
@@ -1527,7 +1781,7 @@
         // ===== INITIALIZATION =====
         const controller = new AnimationController();
 
-        // Create particles
+        // Parçacıklar oluştur
         const particlesContainer = document.getElementById('particles');
         for (let i = 0; i < 40; i++) {
             const particle = document.createElement('div');
@@ -1538,60 +1792,65 @@
             particlesContainer.appendChild(particle);
         }
 
-        // Setup animation sequence
+        // Animasyon dizisi oluştur
         function setupAnimations() {
             controller.steps = [];
 
-            // Header animation
+            // Header animasyonu
             controller.addStep(() => {
                 document.getElementById('header').classList.add('animate');
-                controller.locationIndicator.show('Yolculuk Başlıyor...');
+                controller.locationIndicator.show('🚀 Yolculuk Başlıyor...');
             }, 500);
 
-            // Car drives across with sound
+            // Araba animasyonu (intro sırasında)
             controller.addStep(() => {
                 const car = document.getElementById('car');
                 car.classList.add('animate');
                 controller.audioManager.playCarSound();
-            }, 800);
+            }, 1000);
 
-            // Route cities appear one by one
+            // Rota şehirleri tek tek görünsün
             const routeItems = document.querySelectorAll('#routeLine .route-city, #routeLine .route-arrow');
             routeItems.forEach((item, index) => {
                 controller.addStep(() => {
                     item.classList.add('animate');
-                    controller.audioManager.playTransitionSound();
-                }, 200);
+                    // Her 3 öğede bir geçiş sesi çal
+                    if (index % 3 === 0) {
+                        controller.audioManager.playTransitionSound();
+                    }
+                }, 250);
             });
 
-            // Timeline line grows
+            // Timeline çizgisi uzasın
             controller.addStep(() => {
                 document.getElementById('timeline').classList.add('animate');
-            }, 500);
+            }, 800);
 
-            // Stop 1 - Konya
+            // DURAK 1 - KONYA
             controller.addStep(() => {
                 const stop = document.getElementById('stop1');
                 stop.classList.add('animate');
                 animatePlaceItems(stop);
                 
-                // Change location
                 controller.locationIndicator.update('📍 Konya - Mevlana\'nın Şehri');
                 controller.bgSlideshow.setLocation('konya');
-                controller.audioManager.fadeOutAndChangeMusic('mevlevi');
+                controller.audioManager.changeMusic('mevlevi');
                 controller.slideshowManager.start('slideshow1');
-            }, 1000);
+            }, 1200);
 
-            // Transition to Stop 2
+            // Konya'dan Kapadokya'ya geçiş
             controller.addStep(() => {
                 controller.locationIndicator.update('🚗 Kapadokya\'ya Yolculuk...');
-                document.getElementById('car').classList.remove('animate');
-                void document.getElementById('car').offsetWidth; // Reflow
-                document.getElementById('car').classList.add('animate');
+                
+                // Araba animasyonunu resetle ve tekrar oynat
+                const car = document.getElementById('car');
+                car.classList.remove('animate');
+                void car.offsetWidth;
+                car.classList.add('animate');
                 controller.audioManager.playCarSound();
-            }, 3000);
+            }, 4000);
 
-            // Stop 2 - Kapadokya
+            // DURAK 2 - KAPADOKYA
             controller.addStep(() => {
                 const stop = document.getElementById('stop2');
                 stop.classList.add('animate');
@@ -1599,20 +1858,22 @@
                 
                 controller.locationIndicator.update('📍 Kapadokya - Peri Bacaları');
                 controller.bgSlideshow.setLocation('kapadokya');
-                controller.audioManager.fadeOutAndChangeMusic('kapadokya');
+                controller.audioManager.changeMusic('kapadokya');
                 controller.slideshowManager.start('slideshow2');
-            }, 1500);
+            }, 2000);
 
-            // Transition to Stop 3
+            // Kapadokya'dan Ankara'ya geçiş
             controller.addStep(() => {
                 controller.locationIndicator.update('🚗 Ankara\'ya Yolculuk...');
-                document.getElementById('car').classList.remove('animate');
-                void document.getElementById('car').offsetWidth;
-                document.getElementById('car').classList.add('animate');
+                
+                const car = document.getElementById('car');
+                car.classList.remove('animate');
+                void car.offsetWidth;
+                car.classList.add('animate');
                 controller.audioManager.playCarSound();
-            }, 3500);
+            }, 5000);
 
-            // Stop 3 - Ankara
+            // DURAK 3 - ANKARA
             controller.addStep(() => {
                 const stop = document.getElementById('stop3');
                 stop.classList.add('animate');
@@ -1620,20 +1881,22 @@
                 
                 controller.locationIndicator.update('📍 Ankara - Başkent');
                 controller.bgSlideshow.setLocation('ankara');
-                controller.audioManager.fadeOutAndChangeMusic('ankara');
+                controller.audioManager.changeMusic('ankara');
                 controller.slideshowManager.start('slideshow3');
-            }, 1500);
+            }, 2000);
 
-            // Transition to Stop 4
+            // Ankara'dan Uşak'a geçiş
             controller.addStep(() => {
                 controller.locationIndicator.update('🚗 Eve Dönüş Yolculuğu...');
-                document.getElementById('car').classList.remove('animate');
-                void document.getElementById('car').offsetWidth;
-                document.getElementById('car').classList.add('animate');
+                
+                const car = document.getElementById('car');
+                car.classList.remove('animate');
+                void car.offsetWidth;
+                car.classList.add('animate');
                 controller.audioManager.playCarSound();
-            }, 3500);
+            }, 5000);
 
-            // Stop 4 - Uşak
+            // DURAK 4 - UŞAK (EVE DÖNÜŞ)
             controller.addStep(() => {
                 const stop = document.getElementById('stop4');
                 stop.classList.add('animate');
@@ -1641,34 +1904,35 @@
                 
                 controller.locationIndicator.update('📍 Uşak - Eve Varış');
                 controller.bgSlideshow.setLocation('usak');
-                controller.audioManager.fadeOutAndChangeMusic('journey');
+                controller.audioManager.changeMusic('journey');
                 controller.slideshowManager.start('slideshow4');
-            }, 1500);
+            }, 2000);
 
-            // Footer
+            // FOOTER - Yolculuk tamamlandı
             controller.addStep(() => {
                 const footer = document.getElementById('footer');
                 footer.classList.add('animate');
                 
                 controller.locationIndicator.update('🎉 Yolculuk Tamamlandı!');
+                controller.audioManager.playSuccessSound();
                 
                 const stats = footer.querySelectorAll('.stat');
                 stats.forEach((stat, index) => {
                     setTimeout(() => {
                         stat.style.animation = `statPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards`;
-                    }, index * 200);
+                    }, index * 300);
                 });
 
-                setTimeout(() => animateCountUp(), 500);
-                setTimeout(() => createConfetti(), 800);
-            }, 2500);
+                setTimeout(() => animateCountUp(), 600);
+                setTimeout(() => createConfetti(), 1000);
+            }, 3500);
 
-            // Hide location indicator
+            // Lokasyon göstergesini gizle
             controller.addStep(() => {
                 setTimeout(() => {
                     controller.locationIndicator.hide();
-                }, 3000);
-            }, 1000);
+                }, 4000);
+            }, 2000);
         }
 
         function animatePlaceItems(stop) {
@@ -1676,14 +1940,14 @@
             items.forEach((item, index) => {
                 setTimeout(() => {
                     item.style.animation = `placeReveal 0.4s ease forwards`;
-                }, index * 80);
+                }, index * 100);
             });
 
             const special = stop.querySelector('.special-section');
             if (special) {
                 setTimeout(() => {
                     special.style.animation = `sectionFade 0.5s ease forwards`;
-                }, items.length * 80 + 200);
+                }, items.length * 100 + 300);
             }
         }
 
@@ -1691,7 +1955,7 @@
             document.querySelectorAll('.stat-value[data-target]').forEach(el => {
                 const target = parseInt(el.dataset.target);
                 let current = 0;
-                const increment = target / 20;
+                const increment = target / 25;
                 const timer = setInterval(() => {
                     current += increment;
                     if (current >= target) {
@@ -1700,25 +1964,25 @@
                     } else {
                         el.textContent = Math.floor(current);
                     }
-                }, 50);
+                }, 60);
             });
         }
 
         function createConfetti() {
             const colors = ['#ffd700', '#ff8c00', '#ff6347', '#4ecdc4', '#f093fb', '#4facfe'];
-            for (let i = 0; i < 60; i++) {
+            for (let i = 0; i < 50; i++) {
                 const confetti = document.createElement('div');
                 confetti.className = 'confetti';
                 confetti.style.left = Math.random() * 100 + '%';
                 confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.animationDelay = Math.random() * 0.5 + 's';
-                confetti.style.width = (Math.random() * 12 + 6) + 'px';
-                confetti.style.height = (Math.random() * 12 + 6) + 'px';
+                confetti.style.animationDelay = Math.random() * 0.8 + 's';
+                confetti.style.width = (Math.random() * 10 + 5) + 'px';
+                confetti.style.height = (Math.random() * 10 + 5) + 'px';
                 confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
                 document.body.appendChild(confetti);
                 
                 setTimeout(() => confetti.classList.add('animate'), 10);
-                setTimeout(() => confetti.remove(), 3500);
+                setTimeout(() => confetti.remove(), 4000);
             }
         }
 
@@ -1727,25 +1991,25 @@
             const loadingScreen = document.getElementById('loadingScreen');
             const loadingProgress = document.getElementById('loadingProgress');
             
-            // Simulate loading with progress
-            for (let i = 0; i <= 100; i += 5) {
+            // Yükleme simülasyonu
+            for (let i = 0; i <= 100; i += 4) {
                 loadingProgress.style.width = i + '%';
-                await new Promise(r => setTimeout(r, 50));
+                await new Promise(r => setTimeout(r, 40));
             }
             
-            // Hide loading screen
+            // Yükleme ekranını gizle
             setTimeout(() => {
                 loadingScreen.classList.add('hidden');
                 
-                // Start animations
+                // Animasyonları başlat
                 setupAnimations();
                 controller.play();
-            }, 500);
+            }, 600);
         }
 
         // ===== EVENT LISTENERS =====
         
-        // Audio control
+        // Ses kontrolü
         document.getElementById('audioControl').addEventListener('click', () => {
             const btn = document.getElementById('audioControl');
             const isMuted = controller.audioManager.toggleMute();
@@ -1753,34 +2017,27 @@
             btn.classList.toggle('muted', isMuted);
         });
 
-        // Replay button
-        document.getElementById('replayBtn').addEventListener('click', () => {
-            controller.reset();
+        // Tekrar oynat butonu
+        document.getElementById('replayBtn').addEventListener('click', async () => {
+            await controller.reset();
             document.getElementById('car').classList.remove('animate');
             
             setTimeout(() => {
                 setupAnimations();
                 controller.play();
-            }, 500);
+            }, 700);
         });
 
-        // Resume AudioContext on user interaction (for browsers that require it)
-        document.addEventListener('click', () => {
-            if (controller.audioManager.audioContext?.state === 'suspended') {
-                controller.audioManager.audioContext.resume();
-            }
-        }, { once: true });
-
-        // Handle visibility change (pause when tab is hidden)
+        // Görünürlük değişikliği (sekme gizlendiğinde)
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 controller.audioManager.bgMusic.pause();
             } else if (!controller.audioManager.isMuted && controller.audioManager.currentTrack) {
-                controller.audioManager.bgMusic.play();
+                controller.audioManager.bgMusic.play().catch(() => {});
             }
         });
 
-        // Start app when DOM is ready
+        // Uygulama başlat
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeApp);
         } else {
