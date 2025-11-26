@@ -7,4 +7,5 @@ RewriteRule ^donate*$  donate.html [NC]
 RewriteRule ^news*$  news.html [NC]
 RewriteRule ^games*$  games.html [NC]
 RewriteRule ^projects*$  projects.html [NC]
+RewriteRule ^gezi*$  gezi.html [NC]
 ErrorDocument 404 https://mustafaemrertas.github.io/404.html
